@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>redButton.png</file>
+  </qresource>
+  <qresource>
+    <file>pixil-frame-0.png</file>
+  </qresource>
+</RCC>
