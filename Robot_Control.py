@@ -1,109 +1,19 @@
 import sys
 import json
 import os
-import time
-import wmi
-import ctypes
 
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QItemDelegate, QLineEdit,
                              QDialog, QTableWidgetItem)
-from PyQt6.QtCore import (QTimer,QThread,
-                          pyqtSignal, QObject,
-                          Qt, QMetaObject,
-                          pyqtSlot)
+from PyQt6.QtCore import QTimer, QThread, Qt
 from PyQt6.QtGui import QDoubleValidator
 from PyQt6.uic import loadUi
-from pymycobot import MyCobot320Socket
 from pymycobot import MyCobot320
 from jog_control import Ui_MainWindow
 
-class SystemPowerStatus(ctypes.Structure):
-    _fields_ = [
-        ("ACLineStatus", ctypes.c_byte),
-        ("BatteryFlag", ctypes.c_byte),
-        ("BatteryLifePercent", ctypes.c_byte),
-        ("Reserved1", ctypes.c_byte),
-        ("BatteryLifeTime", ctypes.c_ulong),
-        ("BatteryFullLifeTime", ctypes.c_ulong),
-    ]
-
-class UPSMonitor(QThread):
-    powerLost = pyqtSignal()
-    powerRestored = pyqtSignal()
-    monitoringDisabled = pyqtSignal(str)
-
-    def __init__(self, poll_interval=1):
-        super().__init__()
-        self.poll_interval = poll_interval
-        self._running = True
-        self._last_state = None
-
-    def stop(self):
-        self._running = False
-
-    def run(self):
-        status = SystemPowerStatus()
-
-        try:
-            result = ctypes.windll.kernel32.GetSystemPowerStatus(
-                ctypes.byref(status)
-            )
-        except Exception as e:
-            self.monitoringDisabled.emit("Power status API not available")
-            return
-
-        if status.BatteryFlag == 128:
-            self.monitoringDisabled.emit("No battery detected")
-            return
-
-        while self._running:
-            ctypes.windll.kernel32.GetSystemPowerStatus(
-                ctypes.byref(status)
-            )
-
-            if status.ACLineStatus == 0:
-                current_state = "battery"
-            elif status.ACLineStatus == 1:
-                current_state = "ac"
-            else:
-                current_state = "unknown"
-
-            if current_state != self._last_state:
-
-                if current_state == "battery":
-                    time.sleep(1)
-                    if current_state == "battery":
-                        self.powerLost.emit()
-
-                elif current_state == "ac":
-                    self.powerRestored.emit()
-
-                self._last_state = current_state
-
-            time.sleep(self.poll_interval)
-
-class Connection(QObject):
-    result = pyqtSignal(int, bool)
-    finished = pyqtSignal()
-    robot_connection = pyqtSignal(int, object)
-    def __init__(self, ip, index):
-        super().__init__()
-        self.ip = ip
-        self.robot = index
-
-    def run(self):
-        try:
-            mc = MyCobot320Socket(self.ip, 9000)
-            mc.power_on()
-            mc.clear_error_information()
-
-            self.robot_connection.emit(self.robot, mc)
-            self.result.emit(self.robot, True)
-        except:
-            self.result.emit(self.robot, False)
-        finally:
-            self.finished.emit()
+from core.ups_monitor import UPSMonitor
+from core.connection import Connection
+from core.robot_runner import RobotRun
 
 class NumericDelegate(QItemDelegate):
     def __init__(self, parent=None):
@@ -124,101 +34,6 @@ class NewRecipeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi("ui/NewRecipe_Dialog.ui", self)
-
-class RobotRun(QObject):
-    finished = pyqtSignal(int)
-    Current_Position = pyqtSignal(int, list)
-    ErrorInformation = pyqtSignal(int, str)
-    UpdateStatus = pyqtSignal(int, str)
-    FinishForward = pyqtSignal(bool)
-    FinishReverse = pyqtSignal(bool)
-
-    def __init__(self,robot,points,speed):
-        super().__init__()
-        self.mc = robot["Connection"]
-        self.id = robot["ID"]
-        self.speed = speed
-        self.points = points
-        self.running = False
-        self.stopping = False
-
-    @pyqtSlot()
-    def run_forward(self):
-        self.running = True
-        self.stopping = False
-        self.mc.focus_all_servos()
-
-        for point in self.points:
-            if self.stopping:
-                break
-
-            self.mc.send_angles(point["coords"], self.speed)
-
-            if self.mc.get_error_information != 0:
-                error_message = self.get_error()
-                self.UpdateStatus.emit(self.id, "Error")
-                self.ErrorInformation.emit(self.id, error_message)
-                break
-
-            self.UpdateStatus.emit(self.id, "Moving")
-            while self.mc.is_moving == 1:
-                if self.mc.get_error_information != 0:
-                    error_message = self.get_error()
-                    self.UpdateStatus.emit(self.id, "Error")
-                    self.ErrorInformation.emit(self.id, error_message)
-                    break
-                time.sleep(0.05)
-        self.UpdateStatus(self.id, "In postion")
-        self.FinishForward.emit(True)
-
-    @pyqtSlot()
-    def run_reverse(self):
-        self.stopping = True
-        self.running = False
-
-        for point in reversed(self.points):
-            self.mc.send_angles(point["coords"], self.speed)
-
-            if self.mc.get_error_information != 0:
-                error_message = self.get_error()
-                self.UpdateStatus.emit(self.id, "Error")
-                self.ErrorInformation.emit(self.id, error_message)
-                break
-
-            self.UpdateStatus.emit(self.id, "Moving")
-            while self.mc.is_moving == 1:
-                if self.mc.get_error_information != 0:
-                    error_message = self.get_error()
-                    self.UpdateStatus.emit(self.id, "Error")
-                    self.ErrorInformation.emit(self.id, error_message)
-                    break
-                time.sleep(0.05)
-        self.FinishReverse.emit(True)
-        self.stop()
-
-    def get_error(self):
-        error = self.mc.get_error_information()
-        message = ""
-
-        if error == 0:
-            message = "None"
-        elif  1 <= error < 16 :
-            message = f"Joint {error} at the limit"
-        elif 16 <= error < 20 :
-            message = "Collision"
-        elif error >= 32:
-            message = "Can not reach postion"
-        else:
-            message = "Unknown error"
-
-        return message
-
-    def stop(self):
-        self.running = False
-        self.stopping = False
-        self.mc.stop()
-        #self.mc.release_all_servos()
-        self.finished.emit(self.id)
 
 class JogInterface(QMainWindow):
     def __init__(self):
