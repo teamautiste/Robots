@@ -2,7 +2,6 @@ import time
 
 from PyQt6.QtCore import pyqtSignal, QObject, pyqtSlot
 
-
 class RobotRun(QObject):
     finished = pyqtSignal(int)
     Current_Position = pyqtSignal(int, list)

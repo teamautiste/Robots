@@ -750,12 +750,12 @@ class JogInterface(QMainWindow):
     #  Auto run functions  #
     def start_sequence(self):
         self.sequence_index = 0
-        self.ui.run_Button.setEnabled(False)
-        self.ui.stop_Button.setEnabled(True)
         self.setup_robot_threads()
         if len(self.robot_connections) < 1:
             print("No Robots Connected")
             return
+        self.ui.run_Button.setEnabled(False)
+        self.ui.stop_Button.setEnabled(True)
         self._start_next_robot()
 
     def _start_next_robot(self):

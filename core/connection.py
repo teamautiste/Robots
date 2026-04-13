@@ -1,7 +1,6 @@
 from PyQt6.QtCore import pyqtSignal, QObject
 from pymycobot import MyCobot320Socket
 
-
 class Connection(QObject):
     result = pyqtSignal(int, bool)
     finished = pyqtSignal()

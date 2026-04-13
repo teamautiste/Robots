@@ -1,8 +1,6 @@
 import ctypes
 import time
-
 from PyQt6.QtCore import pyqtSignal, QThread
-
 
 class SystemPowerStatus(ctypes.Structure):
     _fields_ = [

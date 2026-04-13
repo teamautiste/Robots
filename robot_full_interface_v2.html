@@ -1,0 +1,397 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+.app{padding:1rem;font-family:var(--font-sans);}
+.tabs{display:flex;gap:2px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.5rem;}
+.tab{padding:8px 18px;font-size:13px;cursor:pointer;border-radius:6px 6px 0 0;border:0.5px solid transparent;color:var(--color-text-secondary);background:transparent;transition:all .15s;}
+.tab.active{background:var(--color-background-primary);border-color:var(--color-border-tertiary);border-bottom-color:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;}
+.tab:hover:not(.active){background:var(--color-background-secondary);}
+.panel{display:none;}.panel.active{display:block;}
+.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;}
+select,input[type=text],input[type=number]{height:34px;padding:0 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;}
+.sec-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.jog-mode-pills{display:flex;gap:4px;}
+.pill{padding:5px 14px;border-radius:999px;font-size:12px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);transition:all .15s;}
+.pill.active{background:#185FA5;border-color:#185FA5;color:#E6F1FB;}
+.joint-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;}
+.jog-btn{height:52px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.jog-btn span.axis{font-size:10px;color:var(--color-text-secondary);}
+.jog-btn:hover{background:var(--color-background-primary);border-color:var(--color-border-primary);}
+.jog-btn:active{transform:scale(.96);background:#E6F1FB;}
+.jog-btn.minus:active{background:#FCEBEB;}
+.side-panel{display:flex;flex-direction:column;gap:10px;}
+.pos-table{width:100%;border-collapse:collapse;font-size:12px;}
+.pos-table th{background:var(--color-background-secondary);padding:6px 10px;text-align:left;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
+.pos-table td{padding:8px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);font-variant-numeric:tabular-nums;}
+.pos-table .val{font-weight:500;color:#185FA5;text-align:right;}
+.status-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;}
+.btn{padding:0 16px;height:34px;border-radius:var(--border-radius-md);font-size:13px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);transition:all .15s;}
+.btn:hover{background:var(--color-background-secondary);}
+.btn.primary{background:#185FA5;border-color:#185FA5;color:#E6F1FB;}
+.btn.primary:hover{background:#0C447C;}
+.btn.danger{background:#FCEBEB;border-color:#E24B4A;color:#A32D2D;}
+.btn.success{background:#E1F5EE;border-color:#1D9E75;color:#0F6E56;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.recipe-list{min-height:120px;max-height:160px;overflow-y:auto;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);}
+.recipe-item{padding:8px 12px;font-size:13px;cursor:pointer;color:var(--color-text-primary);border-bottom:0.5px solid var(--color-border-tertiary);}
+.recipe-item:last-child{border-bottom:none;}
+.recipe-item:hover{background:var(--color-background-secondary);}
+.recipe-item.active{background:#E6F1FB;color:#185FA5;font-weight:500;}
+.points-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+.points-table th{background:var(--color-background-secondary);padding:6px 8px;text-align:center;font-weight:500;color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);}
+.points-table td{padding:6px 8px;border:0.5px solid var(--color-border-tertiary);text-align:center;color:var(--color-text-primary);font-size:11px;}
+.points-table tr.selected td{background:#E6F1FB;color:#0C447C;}
+.robot-tabs{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:10px;}
+.rtab{padding:4px 12px;font-size:11px;border-radius:999px;border:0.5px solid var(--color-border-secondary);cursor:pointer;color:var(--color-text-secondary);background:transparent;}
+.rtab.active{background:#185FA5;border-color:#185FA5;color:#E6F1FB;}
+.ip-table{width:100%;border-collapse:collapse;font-size:13px;}
+.ip-table td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle;}
+.ip-table tr:last-child td{border-bottom:none;}
+.conn-badge{display:inline-flex;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:500;}
+.conn-badge.ok{background:#E1F5EE;color:#0F6E56;}
+.conn-badge.off{background:#F1EFE8;color:#5F5E5A;}
+.conn-badge.err{background:#FCEBEB;color:#A32D2D;}
+.speed-row{display:flex;align-items:center;gap:8px;}
+.speed-row input[type=range]{flex:1;}
+.speed-val{font-size:13px;font-weight:500;min-width:34px;color:var(--color-text-primary);}
+.teach-row{display:flex;gap:8px;align-items:flex-end;margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--color-border-tertiary);}
+.log-box{min-height:80px;max-height:110px;overflow-y:auto;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 12px;font-size:11px;font-family:var(--font-mono);color:var(--color-text-secondary);}
+.log-entry{padding:1px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.log-entry:last-child{border-bottom:none;}
+.log-ok{color:#0F6E56;}.log-err{color:#A32D2D;}.log-warn{color:#854F0B;}
+</style>
+
+<div class="app">
+<div class="tabs">
+  <button class="tab" onclick="showTab('main')">Main</button>
+  <button class="tab active" onclick="showTab('jogging')">Jogging</button>
+  <button class="tab" onclick="showTab('config')">Configuration</button>
+</div>
+
+<div id="tab-main" class="panel">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem;">
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;">Robots activos</div>
+      <div style="font-size:22px;font-weight:500;" id="m-active">0 / 8</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;">Velocidad</div>
+      <div style="font-size:22px;font-weight:500;" id="m-speed">25%</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;">Errores</div>
+      <div style="font-size:22px;font-weight:500;color:#A32D2D;" id="m-errors">0</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Receta</label>
+      <select style="width:200px;"><option>— Seleccionar —</option><option>Receta A</option><option>Receta B</option></select>
+    </div>
+    <div class="field" style="flex:1;min-width:180px;"><label>Velocidad del robot</label>
+      <div class="speed-row"><input type="range" min="0" max="100" step="1" value="25" oninput="document.getElementById('m-speed').textContent=this.value+'%'"><span class="speed-val">25%</span></div>
+    </div>
+    <button class="btn primary" style="margin-bottom:2px;">▶ Iniciar</button>
+    <button class="btn" style="margin-bottom:2px;">Detener</button>
+  </div>
+  <div class="sec-label">Estado de robots</div>
+  <table style="width:100%;border-collapse:collapse;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;font-size:13px;">
+    <thead><tr>
+      <th style="background:var(--color-background-secondary);padding:8px 12px;text-align:left;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);">Robot</th>
+      <th style="background:var(--color-background-secondary);padding:8px 12px;text-align:left;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);">Estado</th>
+      <th style="background:var(--color-background-secondary);padding:8px 12px;text-align:left;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);">Error</th>
+    </tr></thead>
+    <tbody id="main-robots"></tbody>
+  </table>
+</div>
+
+<div id="tab-jogging" class="panel active">
+  <div class="row" style="margin-bottom:1rem;">
+    <div class="field"><label>Modo</label>
+      <div class="jog-mode-pills">
+        <button class="pill active" onclick="setMode(this,'Joint')">Joint</button>
+        <button class="pill" onclick="setMode(this,'Cartesiano')">Cartesiano</button>
+        <button class="pill" onclick="setMode(this,'Herramienta')">Herramienta</button>
+      </div>
+    </div>
+    <div class="field"><label>Robot</label>
+      <select style="width:140px;" id="cur-robot" onchange="updateRobotLabel()">
+        <option>Robot 1</option><option>Robot 2</option><option>Robot 3</option>
+        <option>Robot 4</option><option>Robot 5</option><option>Robot 6</option>
+        <option>Robot 7</option><option>Robot 8</option>
+      </select>
+    </div>
+    <div class="field"><label>Paso (mm / °)</label>
+      <div style="display:flex;gap:4px;">
+        <button class="pill active" id="step-btn" onclick="setStep(this,1)">1</button>
+        <button class="pill" onclick="setStep(this,5)">5</button>
+        <button class="pill" onclick="setStep(this,10)">10</button>
+        <button class="pill" onclick="setStep(this,50)">50</button>
+      </div>
+    </div>
+    <div class="field"><label>Velocidad jog</label>
+      <div class="speed-row" style="min-width:140px;">
+        <input type="range" min="1" max="100" step="1" value="10" oninput="this.nextElementSibling.textContent=this.value+'%'">
+        <span class="speed-val">10%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="sec-label" id="axis-mode-label">Ejes de junta</div>
+      <div class="joint-grid" id="jog-btns"></div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem;">
+        <button class="btn danger" onclick="releaseServos()">Liberar servos</button>
+        <button class="btn" onclick="goHome()">Ir a home</button>
+        <button class="btn success" onclick="savePos()">Guardar posición</button>
+      </div>
+      <div class="status-bar" id="jog-status">
+        <span class="status-dot"></span>
+        <span>Listo — Robot 1 conectado</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card" style="padding:.75rem 1rem;">
+        <div class="sec-label">Posición actual — <span id="pos-robot-label">Robot 1</span></div>
+        <table class="pos-table">
+          <thead><tr><th>Eje</th><th style="text-align:right;">Valor</th><th style="text-align:right;">Unidad</th></tr></thead>
+          <tbody id="pos-tbody"></tbody>
+        </table>
+      </div>
+      <div class="card" style="padding:.75rem 1rem;">
+        <div class="sec-label">Registro de movimientos</div>
+        <div class="log-box" id="jog-log"><div class="log-entry log-ok">[OK] Sistema listo</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem;padding:.75rem 1.25rem;">
+    <div class="sec-label">Teach &amp; navegación de puntos</div>
+    <div class="teach-row">
+      <div class="field"><label>Receta</label>
+        <select style="width:160px;"><option>— Ninguna —</option><option>Receta A</option><option>Receta B</option></select>
+      </div>
+      <div class="field"><label>Punto</label>
+        <select style="width:160px;" id="point-select"><option>Punto nuevo</option><option>Home</option><option>Punto 1</option><option>Punto 2</option></select>
+      </div>
+      <button class="btn success" onclick="teachPoint()">Teach</button>
+      <button class="btn primary" onclick="goToPoint()">Go To</button>
+      <button class="btn">Añadir punto</button>
+    </div>
+  </div>
+</div>
+
+<div id="tab-config" class="panel">
+  <div class="two-col" style="margin-bottom:1rem;">
+    <div class="card">
+      <div class="sec-label">Gestión de recetas</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="text" placeholder="Nombre de receta..." style="flex:1;">
+        <button class="btn primary" onclick="addRecipe()">Nueva</button>
+        <button class="btn danger" onclick="delRecipe()">Eliminar</button>
+      </div>
+      <div class="recipe-list" id="recipe-list"></div>
+    </div>
+    <div class="card">
+      <div class="sec-label">Puntos de receta</div>
+      <div class="robot-tabs" id="robot-tabs"></div>
+      <div style="overflow-x:auto;">
+        <table class="points-table" id="points-tbl">
+          <thead><tr><th>Punto</th><th>J1</th><th>J2</th><th>J3</th><th>J4</th><th>J5</th><th>J6</th></tr></thead>
+          <tbody id="points-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="btn primary" onclick="addPoint()">Añadir punto</button>
+        <button class="btn danger" onclick="delPoint()">Eliminar</button>
+        <button class="btn" onclick="movePoint(-1)">Subir</button>
+        <button class="btn" onclick="movePoint(1)">Bajar</button>
+        <button class="btn success" style="margin-left:auto;">Guardar puntos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="sec-label">Configuración IP</div>
+      <table class="ip-table" id="ip-table"></table>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn primary">Guardar config.</button>
+        <button class="btn" onclick="pingAll()">Ping todos</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-label">Parámetros generales</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="field"><label>Vel. máxima (%)</label><input type="number" value="100" style="width:100%;"></div>
+        <div class="field"><label>Aceleración (ms)</label><input type="number" value="200" style="width:100%;"></div>
+        <div class="field"><label>Timeout (s)</label><input type="number" value="5" style="width:100%;"></div>
+        <div class="field"><label>Reintentos</label><input type="number" value="3" style="width:100%;"></div>
+        <div class="field" style="grid-column:span 2;"><label>Puerto de comunicación</label><input type="number" value="8080" style="width:100%;"></div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary);">
+        <div class="sec-label" style="margin-bottom:8px;">UPS / Energía</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="field"><label>IP UPS</label><input type="text" value="192.168.1.200" style="width:100%;"></div>
+          <div class="field"><label>Umbral batería (%)</label><input type="number" value="20" style="width:100%;"></div>
+        </div>
+      </div>
+      <button class="btn success" style="margin-top:10px;width:100%;">Guardar todo</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const axes6 = ['J1','J2','J3','J4','J5','J6'];
+const axesCart = ['X','Y','Z','Rx','Ry','Rz'];
+const units6 = axes6.map(()=>'°');
+const unitsCart = ['mm','mm','mm','°','°','°'];
+let jogStep = 1;
+let positions = Array(8).fill(null).map(()=>({vals:[0,0,0,0,0,0]}));
+let curRobot = 0;
+let jogMode = 'Joint';
+let recipes = ['Receta A','Receta B','Receta C'];
+let selRecipe = 0;
+let points = [['Home',0,0,0,0,0,0],['Punto 1',45,-30,90,0,45,0],['Punto 2',90,0,60,-45,0,90]];
+let selPoint = -1;
+let selRobotTab = 0;
+const ips = ['127.0.0.1','192.168.1.31','192.168.1.32','192.168.1.33','192.168.1.34','192.168.1.35','192.168.1.36','192.168.1.37'];
+const connStatus = ['ok','ok','ok','off','ok','err','off','ok'];
+
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','jogging','config'][i]===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function setMode(btn, mode){
+  jogMode = mode;
+  document.querySelectorAll('.jog-mode-pills .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('axis-mode-label').textContent = mode==='Joint'?'Ejes de junta':mode==='Cartesiano'?'Ejes cartesianos':'Ejes de herramienta';
+  renderJogBtns();
+  renderPosTable();
+}
+
+function setStep(btn, v){
+  jogStep = v;
+  document.querySelectorAll('.field .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderJogBtns(){
+  const axes = jogMode==='Joint'?axes6:axesCart;
+  const btns = document.getElementById('jog-btns');
+  btns.innerHTML = axes.map(a=>`
+    <button class="jog-btn minus" onclick="jog('${a}',-1)"><span class="axis">${a}</span>−</button>
+    <button class="jog-btn" onclick="jog('${a}',1)"><span class="axis">${a}</span>+</button>
+  `).join('');
+}
+
+function jog(axis, dir){
+  const axes = jogMode==='Joint'?axes6:axesCart;
+  const idx = axes.indexOf(axis);
+  if(idx>=0){ positions[curRobot].vals[idx] = +(positions[curRobot].vals[idx] + dir*jogStep).toFixed(2); }
+  renderPosTable();
+  addLog(`[JOG] ${axis} ${dir>0?'+':'-'}${jogStep} → ${positions[curRobot].vals[idx>=0?idx:0].toFixed(2)}`,'ok');
+}
+
+function renderPosTable(){
+  const axes = jogMode==='Joint'?axes6:axesCart;
+  const us = jogMode==='Joint'?units6:unitsCart;
+  const tbody = document.getElementById('pos-tbody');
+  tbody.innerHTML = axes.map((a,i)=>`<tr><td>${a}</td><td class="val">${positions[curRobot].vals[i].toFixed(2)}</td><td style="color:var(--color-text-secondary);text-align:right;">${us[i]}</td></tr>`).join('');
+}
+
+function updateRobotLabel(){
+  curRobot = document.getElementById('cur-robot').selectedIndex;
+  document.getElementById('pos-robot-label').textContent = 'Robot '+(curRobot+1);
+  document.getElementById('jog-status').innerHTML = `<span class="status-dot"></span><span>Listo — Robot ${curRobot+1} conectado</span>`;
+  renderPosTable();
+}
+
+function releaseServos(){ addLog('[WARN] Servos liberados — Robot '+(curRobot+1),'warn'); }
+function goHome(){ positions[curRobot].vals=[0,0,0,0,0,0]; renderPosTable(); addLog('[OK] Moviendo a home — Robot '+(curRobot+1),'ok'); }
+function savePos(){ addLog('[OK] Posición guardada','ok'); }
+function teachPoint(){ const p = document.getElementById('point-select').value; addLog('[TEACH] '+p+' guardado','ok'); }
+function goToPoint(){ const p = document.getElementById('point-select').value; addLog('[GO TO] Moviendo a '+p,'ok'); }
+
+function addLog(msg, type){
+  const log = document.getElementById('jog-log');
+  const d = document.createElement('div');
+  d.className = 'log-entry log-'+type;
+  d.textContent = msg;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderRecipes(){
+  const el = document.getElementById('recipe-list');
+  el.innerHTML = recipes.map((r,i)=>`<div class="recipe-item${i===selRecipe?' active':''}" onclick="selRecipe=${i};renderRecipes();">${r}</div>`).join('');
+}
+
+function addRecipe(){
+  const inp = document.querySelector('#tab-config input[type=text]');
+  if(inp.value.trim()){recipes.push(inp.value.trim());inp.value='';renderRecipes();}
+}
+function delRecipe(){ if(recipes.length>1){recipes.splice(selRecipe,1);selRecipe=Math.max(0,selRecipe-1);renderRecipes();} }
+
+function renderRobotTabs(){
+  const tabs = document.getElementById('robot-tabs');
+  tabs.innerHTML = Array.from({length:8},(_,i)=>`<button class="rtab${i===selRobotTab?' active':''}" onclick="selRobotTab=${i};renderRobotTabs();">R${i+1}</button>`).join('');
+}
+
+function renderPoints(){
+  const tbody = document.getElementById('points-body');
+  tbody.innerHTML = points.map((p,i)=>`<tr class="${i===selPoint?'selected':''}" onclick="selPoint=${i};renderPoints();">
+    <td>${p[0]}</td>${p.slice(1).map(v=>`<td>${v.toFixed(1)}</td>`).join('')}</tr>`).join('');
+}
+
+function addPoint(){ points.push(['P'+(points.length+1),0,0,0,0,0,0]); renderPoints(); }
+function delPoint(){ if(selPoint>=0&&points.length>1){points.splice(selPoint,1);selPoint=Math.max(0,selPoint-1);renderPoints();} }
+function movePoint(dir){ if(selPoint<0)return; const ni=selPoint+dir; if(ni<0||ni>=points.length)return; [points[selPoint],points[ni]]=[points[ni],points[selPoint]]; selPoint=ni; renderPoints(); }
+
+function renderIpTable(){
+  const t = document.getElementById('ip-table');
+  t.innerHTML = ips.map((ip,i)=>`<tr>
+    <td style="font-weight:500;width:68px;">Robot ${i+1}</td>
+    <td><input type="text" value="${ip}" style="width:140px;font-size:12px;height:28px;padding:0 8px;"></td>
+    <td><button class="btn" style="height:28px;font-size:11px;padding:0 10px;" onclick="connectRobot(${i})">Conectar</button></td>
+    <td><span class="conn-badge ${connStatus[i]}">${connStatus[i]==='ok'?'Conectado':connStatus[i]==='err'?'Error':'Desconectado'}</span></td>
+  </tr>`).join('');
+}
+
+function connectRobot(i){ connStatus[i]='ok'; renderIpTable(); }
+function pingAll(){ ips.forEach((_,i)=>{ if(connStatus[i]!=='err')connStatus[i]='ok'; }); renderIpTable(); }
+
+function renderMainRobots(){
+  const statuses=['idle','running','running','idle','running','error','idle','running'];
+  const labels={idle:'Inactivo',running:'Ejecutando',error:'Error'};
+  const colors={idle:'#F1EFE8',running:'#E1F5EE',error:'#FCEBEB'};
+  const tc={idle:'#5F5E5A',running:'#0F6E56',error:'#A32D2D'};
+  const dot={idle:'#888780',running:'#1D9E75',error:'#E24B4A'};
+  document.getElementById('main-robots').innerHTML = statuses.map((s,i)=>`
+    <tr><td style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;">
+        <span style="width:7px;height:7px;border-radius:50%;background:${dot[s]};display:inline-block;"></span>Robot ${i+1}</span></td>
+    <td style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);">
+      <span style="background:${colors[s]};color:${tc[s]};font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px;">${labels[s]}</span></td>
+    <td style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;color:${s==='error'?'#A32D2D':'var(--color-text-secondary)'};">${s==='error'?'Timeout de conexión':'—'}</td></tr>`).join('');
+  document.getElementById('m-active').textContent = statuses.filter(s=>s==='running').length+' / 8';
+  document.getElementById('m-errors').textContent = statuses.filter(s=>s==='error').length;
+}
+
+renderJogBtns();
+renderPosTable();
+renderRecipes();
+renderRobotTabs();
+renderPoints();
+renderIpTable();
+renderMainRobots();
+</script>
