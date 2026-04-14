@@ -820,7 +820,7 @@ class JogInterface(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyle("WindowsVista")
+    app.setStyle("Fusion")
     window = JogInterface()
     window.show()
     sys.exit(app.exec())

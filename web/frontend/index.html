@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Control — Cobot 320</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- UPS Alert Banner -->
+<div class="ups-banner" id="ups-banner">
+  <span>&#9889;</span>
+  <span id="ups-banner-msg">¡Corte de energía detectado! Secuencias detenidas.</span>
+  <button class="btn btn-sm btn-danger" onclick="dismissUPS()">Cerrar</button>
+</div>
+
+<div class="app-shell">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-icon">&#x2699;</div>
+      <div>
+        <div class="app-logo-text">Robot Control</div>
+        <div class="app-logo-sub">Elephant Robotics — Cobot 320</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="ups-indicator" id="ups-indicator">
+        <span>&#x26A1;</span> <span id="ups-text">UPS OK</span>
+      </div>
+      <div class="status-bar" style="padding:6px 12px;">
+        <span class="dot" id="header-dot"></span>
+        <span id="header-status">Sin robot seleccionado</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('main')">&#x25B6; Main</button>
+      <button class="tab-btn" onclick="showTab('jogging')">&#x1F579; Jogging</button>
+      <button class="tab-btn" onclick="showTab('config')">&#x2699; Configuración</button>
+    </div>
+    <div class="tab-content-wrapper">
+
+      <!-- ===== MAIN TAB ===== -->
+      <div class="tab-panel active" id="tab-main">
+
+        <!-- Stat cards -->
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-card-label">Robots conectados</div>
+            <div class="stat-card-value" id="m-connected">0 / 8</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Velocidad de ejecución</div>
+            <div class="stat-card-value" id="m-speed">25%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Errores activos</div>
+            <div class="stat-card-value error-val" id="m-errors">0</div>
+          </div>
+        </div>
+
+        <!-- Controls row -->
+        <div class="row">
+          <div class="field">
+            <label>Receta</label>
+            <select class="input" id="main-recipe-select" style="width:200px;" onchange="onMainRecipeChange()">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="field" style="flex:1;min-width:160px;">
+            <label>Velocidad del robot</label>
+            <div class="speed-row">
+              <input type="range" min="1" max="100" value="25" id="run-speed-slider"
+                oninput="document.getElementById('run-speed-val').textContent=this.value+'%';document.getElementById('m-speed').textContent=this.value+'%'">
+              <span class="speed-val" id="run-speed-val">25%</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-lg" id="run-btn" onclick="startSequence()">&#x25B6; Iniciar</button>
+          <button class="btn btn-danger btn-lg" id="stop-btn" onclick="stopSequence()" disabled>&#x25FC; Detener</button>
+        </div>
+
+        <!-- Robot status table -->
+        <div class="sec-label">Estado de robots</div>
+        <div class="table-wrap">
+          <table id="main-robots-table">
+            <thead>
+              <tr>
+                <th>Robot</th>
+                <th>Estado</th>
+                <th>Progreso secuencia</th>
+                <th>Error</th>
+              </tr>
+            </thead>
+            <tbody id="main-robots-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== JOGGING TAB ===== -->
+      <div class="tab-panel" id="tab-jogging">
+
+        <!-- Controls row -->
+        <div class="row" style="margin-bottom:16px;">
+          <div class="field">
+            <label>Modo</label>
+            <div class="pills" id="jog-mode-pills">
+              <button class="pill active" onclick="setJogMode('joint',this)">Joint</button>
+              <button class="pill" onclick="setJogMode('cartesian',this)">Cartesiano</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Robot</label>
+            <select class="input" id="jog-robot-select" style="width:130px;" onchange="onJogRobotChange()">
+              <option value="">— Ninguno —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Paso (mm / °)</label>
+            <div class="pills" id="step-pills">
+              <button class="pill active" onclick="setStep(1,this)">1</button>
+              <button class="pill" onclick="setStep(5,this)">5</button>
+              <button class="pill" onclick="setStep(10,this)">10</button>
+              <button class="pill" onclick="setStep(50,this)">50</button>
+            </div>
+          </div>
+          <div class="field" style="min-width:150px;">
+            <label>Velocidad jog</label>
+            <div class="speed-row">
+              <input type="range" min="1" max="100" value="10" id="jog-speed-slider"
+                oninput="document.getElementById('jog-speed-val').textContent=this.value+'%'">
+              <span class="speed-val" id="jog-speed-val">10%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- Left: jog buttons + controls -->
+          <div>
+            <div class="sec-label" id="jog-axis-label">Ejes de junta</div>
+            <div class="jog-grid" id="jog-buttons"></div>
+
+            <div class="row" style="gap:8px;margin-bottom:12px;">
+              <button class="btn btn-danger" onclick="releaseServos()">&#x1F513; Liberar servos</button>
+              <button class="btn" onclick="focusServos()">&#x1F512; Enfocar servos</button>
+            </div>
+
+            <div class="status-bar" id="jog-status-bar">
+              <span class="dot" id="jog-dot"></span>
+              <span id="jog-status-text">Sin robot conectado</span>
+            </div>
+          </div>
+
+          <!-- Right: position + log -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card card-sm">
+              <div class="sec-label">Posición actual — <span id="pos-robot-label">—</span></div>
+              <table class="pos-table" id="pos-table">
+                <thead><tr><th>Eje</th><th style="text-align:right">Valor</th><th style="text-align:right">Unidad</th></tr></thead>
+                <tbody id="pos-tbody"></tbody>
+              </table>
+            </div>
+            <div class="card card-sm">
+              <div class="sec-label">Registro de movimientos</div>
+              <div class="log-box" id="jog-log"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Teach section -->
+        <div class="card" style="margin-top:14px;padding:14px 20px;">
+          <div class="sec-label">Teach &amp; navegación de puntos</div>
+          <div class="teach-row">
+            <div class="field">
+              <label>Receta</label>
+              <select class="input" id="teach-recipe-select" style="width:160px;" onchange="onTeachRecipeChange()">
+                <option value="">— Ninguna —</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Punto</label>
+              <select class="input" id="teach-point-select" style="width:160px;">
+                <option value="__new__">Punto nuevo</option>
+              </select>
+            </div>
+            <button class="btn btn-success" onclick="teachPoint()">&#x1F4CC; Teach</button>
+            <button class="btn btn-primary" onclick="goToPoint()">Go To</button>
+            <button class="btn" onclick="addNewPoint()">+ Añadir punto</button>
+          </div>
+          <div id="teach-feedback" style="margin-top:8px;font-size:11px;color:var(--text-secondary);"></div>
+        </div>
+      </div>
+
+      <!-- ===== CONFIG TAB ===== -->
+      <div class="tab-panel" id="tab-config">
+
+        <div class="two-col" style="margin-bottom:14px;">
+          <!-- Recipe management -->
+          <div class="card">
+            <div class="sec-label">Gestión de recetas</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <input type="text" class="input" id="new-recipe-name" placeholder="Nombre de receta..." style="flex:1;">
+              <button class="btn btn-primary" onclick="createRecipe()">Nueva</button>
+              <button class="btn btn-danger" onclick="deleteRecipe()">Eliminar</button>
+            </div>
+            <div class="recipe-list" id="recipe-list"></div>
+          </div>
+
+          <!-- Points per robot -->
+          <div class="card">
+            <div class="sec-label">Puntos de receta — <span id="points-recipe-label">sin selección</span></div>
+            <div class="robot-tabs" id="robot-tabs"></div>
+            <div style="overflow-x:auto;max-height:160px;overflow-y:auto;">
+              <table class="points-table" id="points-table">
+                <thead>
+                  <tr>
+                    <th style="width:90px;">Punto</th>
+                    <th>J1</th><th>J2</th><th>J3</th><th>J4</th><th>J5</th><th>J6</th>
+                  </tr>
+                </thead>
+                <tbody id="points-tbody"></tbody>
+              </table>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="addPointRow()">+ Punto</button>
+              <button class="btn btn-danger btn-sm" onclick="deletePointRow()">Eliminar</button>
+              <button class="btn btn-sm" onclick="movePointRow(-1)">&#x25B2; Subir</button>
+              <button class="btn btn-sm" onclick="movePointRow(1)">&#x25BC; Bajar</button>
+              <button class="btn btn-success btn-sm" style="margin-left:auto;" onclick="savePoints()">Guardar puntos</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- IP Configuration -->
+          <div class="card">
+            <div class="sec-label">Configuración IP</div>
+            <table class="ip-table" id="ip-table"></table>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-primary" onclick="saveConfig()">Guardar config.</button>
+              <button class="btn" onclick="loadConfig()">Recargar</button>
+            </div>
+          </div>
+
+          <!-- General params -->
+          <div class="card">
+            <div class="sec-label">Parámetros generales</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="field"><label>Vel. máxima (%)</label><input type="number" class="input" value="100"></div>
+              <div class="field"><label>Aceleración (ms)</label><input type="number" class="input" value="200"></div>
+              <div class="field"><label>Timeout (s)</label><input type="number" class="input" value="5"></div>
+              <div class="field"><label>Reintentos</label><input type="number" class="input" value="3"></div>
+              <div class="field" style="grid-column:span 2;"><label>Puerto de comunicación</label><input type="number" class="input" value="9000"></div>
+            </div>
+            <div class="divider"></div>
+            <div class="sec-label">UPS / Energía</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="field"><label>Estado UPS</label>
+                <div class="status-bar" style="height:32px;">
+                  <span class="dot" id="ups-dot"></span>
+                  <span id="ups-status-text">Detectando...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end config tab -->
+    </div><!-- end tab-content-wrapper -->
+  </div>
+</div><!-- end app-shell -->
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

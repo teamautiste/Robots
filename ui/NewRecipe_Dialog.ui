@@ -11,7 +11,56 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>New Recipe</string>
+   <string>Nueva Receta</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QDialog {
+    background-color: #F9F9F9;
+    font-family: &quot;Segoe UI&quot;;
+    font-size: 10pt;
+    color: #1A1A18;
+}
+QLabel {
+    color: #1A1A18;
+    font-size: 10pt;
+    background: transparent;
+    border: none;
+}
+QLineEdit {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid #CBCAC5;
+    border-radius: 5px;
+    background: #FFFFFF;
+    color: #1A1A18;
+    font-size: 10pt;
+    selection-background-color: #E6F1FB;
+    selection-color: #185FA5;
+}
+QLineEdit:focus { border-color: #185FA5; }
+QPushButton {
+    height: 30px;
+    padding: 0 14px;
+    border: 1px solid #CBCAC5;
+    border-radius: 5px;
+    background: #FFFFFF;
+    color: #1A1A18;
+    font-size: 10pt;
+    font-weight: 500;
+}
+QPushButton:hover { background: #F4F4F0; border-color: #AAAAAA; }
+QPushButton:pressed { background: #E9E8E3; }
+QDialogButtonBox QPushButton[text="OK"],
+QDialogButtonBox QPushButton[text="&amp;OK"] {
+    background: #185FA5;
+    border-color: #185FA5;
+    color: #E6F1FB;
+    font-weight: 600;
+}
+QDialogButtonBox QPushButton[text="OK"]:hover,
+QDialogButtonBox QPushButton[text="&amp;OK"]:hover { background: #0C447C; }
+    </string>
   </property>
   <widget class="QDialogButtonBox" name="NewRecipe_DialogButton">
    <property name="geometry">
