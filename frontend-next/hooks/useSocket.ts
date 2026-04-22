@@ -13,7 +13,14 @@ import type {
 
 let socketInstance: Socket | null = null;
 
-export function useSocket(url: string = '') {
+// Next.js rewrites() cannot relay WebSocket upgrades.
+// The socket must connect directly to the Flask-SocketIO backend.
+const SOCKET_URL =
+  typeof window !== 'undefined'
+    ? `http://${window.location.hostname}:5000`
+    : 'http://127.0.0.1:5000';
+
+export function useSocket(url: string = SOCKET_URL) {
   const socketRef = useRef<Socket | null>(null);
 
   const {

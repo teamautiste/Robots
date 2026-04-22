@@ -11,29 +11,28 @@ import {
 import type { IpConfig, RecipeData, Point } from '@/types';
 
 export default function ConfigTab() {
-  const robots         = useAppStore((s) => s.robots);
-  const recipes        = useAppStore((s) => s.recipes);
-  const setRecipes     = useAppStore((s) => s.setRecipes);
+  const robots = useAppStore((s) => s.robots);
+  const recipes = useAppStore((s) => s.recipes);
+  const setRecipes = useAppStore((s) => s.setRecipes);
   const selectedRecipe = useAppStore((s) => s.selectedRecipe);
   const setSelectedRecipe = useAppStore((s) => s.setSelectedRecipe);
-  const selectedRobotTab  = useAppStore((s) => s.selectedRobotTab);
+  const selectedRobotTab = useAppStore((s) => s.selectedRobotTab);
   const setSelectedRobotTab = useAppStore((s) => s.setSelectedRobotTab);
-  const selectedPointRow  = useAppStore((s) => s.selectedPointRow);
+  const selectedPointRow = useAppStore((s) => s.selectedPointRow);
   const setSelectedPointRow = useAppStore((s) => s.setSelectedPointRow);
   const currentRecipeData = useAppStore((s) => s.currentRecipeData);
   const setCurrentRecipeData = useAppStore((s) => s.setCurrentRecipeData);
-  const generalParams     = useAppStore((s) => s.generalParams);
-  const setGeneralParams  = useAppStore((s) => s.setGeneralParams);
+  const generalParams = useAppStore((s) => s.generalParams);
+  const setGeneralParams = useAppStore((s) => s.setGeneralParams);
 
-  const [ipConfig, setIpConfig]     = useState<IpConfig>({});
+  const [ipConfig, setIpConfig] = useState<IpConfig>({});
   const [newRecipeName, setNewRecipeName] = useState('');
-  const [recipeError, setRecipeError]     = useState('');
-  const [ipFeedback, setIpFeedback]       = useState('');
+  const [recipeError, setRecipeError] = useState('');
+  const [ipFeedback, setIpFeedback] = useState('');
   const [pointsFeedback, setPointsFeedback] = useState('');
-  const [deleteConfirm, setDeleteConfirm]   = useState(false);
-  const [configError, setConfigError]       = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [configError, setConfigError] = useState('');
 
-  // ── Load config ────────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     const [cfg, recs] = await Promise.all([apiGetConfig(), apiListRecipes()]);
     setIpConfig(cfg.ips ?? {});
@@ -41,10 +40,8 @@ export default function ConfigTab() {
     setRecipes(Array.isArray(recs) ? recs : []);
   }, [setRecipes, setGeneralParams]);
 
-  // Lazy-load on first render when tab becomes visible
   useState(() => { loadAll(); });
 
-  // ── Recipe CRUD ────────────────────────────────────────────────────────
   async function handleCreateRecipe() {
     setRecipeError('');
     const name = newRecipeName.trim();
@@ -61,7 +58,7 @@ export default function ConfigTab() {
 
   async function handleDeleteRecipe() {
     if (!selectedRecipe) { setRecipeError('Selecciona una receta'); return; }
-    if (!deleteConfirm)  { setDeleteConfirm(true); return; }
+    if (!deleteConfirm) { setDeleteConfirm(true); return; }
     await apiDeleteRecipe(selectedRecipe);
     setSelectedRecipe('');
     setCurrentRecipeData(null);
@@ -95,7 +92,7 @@ export default function ConfigTab() {
   }
 
   function addPointRow() {
-    mutatePoints((pts) => [...pts, { name: `Punto ${pts.length + 1}`, coords: [0,0,0,0,0,0] }]);
+    mutatePoints((pts) => [...pts, { name: `Punto ${pts.length + 1}`, coords: [0, 0, 0, 0, 0, 0] }]);
   }
 
   function deletePointRow() {
@@ -152,15 +149,13 @@ export default function ConfigTab() {
   );
 
   const inputCls = "h-8 px-[10px] border border-border-primary rounded-md bg-bg-primary text-text-primary text-[12px] outline-none focus:border-accent focus:ring-2 focus:ring-accent-light w-full";
-  const btnCls   = "h-8 px-[14px] rounded-md border text-[12px] font-medium transition-colors";
+  const btnCls = "h-8 px-[14px] rounded-md border text-[12px] font-medium transition-colors";
 
   return (
     <div className="p-5 h-full overflow-y-auto space-y-[14px]">
 
-      {/* ── Row 1: Recipe manager + Points table ──────────────────────── */}
       <div className="grid grid-cols-2 gap-[14px]">
 
-        {/* Recipe manager */}
         <div className="bg-bg-primary border border-border-secondary rounded-lg p-[16px_20px]">
           {sectionLabel('Gestión de recetas')}
           <div className="flex gap-2 mb-[10px]">
@@ -185,37 +180,32 @@ export default function ConfigTab() {
               <div className="p-4 text-center text-text-muted text-[12px]">Sin recetas. Crea una nueva.</div>
             ) : recipes.map((r) => (
               <div key={r} onClick={() => handleSelectRecipe(r)}
-                className={`px-[14px] py-2 text-[12px] cursor-pointer border-b border-border-secondary last:border-b-0 flex items-center justify-between transition-colors ${
-                  selectedRecipe === r ? 'bg-accent-light text-accent font-semibold' : 'text-text-primary hover:bg-bg-secondary'
-                }`}>
+                className={`px-[14px] py-2 text-[12px] cursor-pointer border-b border-border-secondary last:border-b-0 flex items-center justify-between transition-colors ${selectedRecipe === r ? 'bg-accent-light text-accent font-semibold' : 'text-text-primary hover:bg-bg-secondary'
+                  }`}>
                 <span>{r}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Points table */}
         <div className="bg-bg-primary border border-border-secondary rounded-lg p-[16px_20px]">
           {sectionLabel(`Puntos de receta — ${selectedRecipe || 'sin selección'}`)}
 
-          {/* Robot tabs R1–R8 */}
           <div className="flex gap-1 flex-wrap mb-[10px]">
             {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
               <button key={n} onClick={() => { setSelectedRobotTab(n); setSelectedPointRow(-1); }}
-                className={`px-3 py-1 text-[11px] font-medium rounded-full border transition-all ${
-                  selectedRobotTab === n ? 'bg-accent border-accent text-white' : 'bg-transparent border-border-primary text-text-secondary hover:bg-bg-secondary'
-                }`}>
+                className={`px-3 py-1 text-[11px] font-medium rounded-full border transition-all ${selectedRobotTab === n ? 'bg-accent border-accent text-white' : 'bg-transparent border-border-primary text-text-secondary hover:bg-bg-secondary'
+                  }`}>
                 R{n}
               </button>
             ))}
           </div>
 
-          {/* Editable points table */}
           <div className="overflow-x-auto max-h-[160px] overflow-y-auto">
             <table className="w-full border-collapse text-[11px] table-fixed">
               <thead>
                 <tr>
-                  {['Punto','J1','J2','J3','J4','J5','J6'].map((h) => (
+                  {['Punto', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6'].map((h) => (
                     <th key={h} className="bg-bg-secondary px-[6px] py-[6px] text-center text-[10px] font-semibold text-text-secondary border border-border-secondary">{h}</th>
                   ))}
                 </tr>
@@ -294,7 +284,7 @@ export default function ConfigTab() {
             <button onClick={handleSaveConfig} className={`${btnCls} bg-accent border-accent text-white hover:bg-accent-hover`}>Guardar config.</button>
             <button onClick={loadAll} className={`${btnCls} bg-bg-primary border-border-primary text-text-primary hover:bg-bg-secondary`}>Recargar</button>
           </div>
-          {ipFeedback  && <p className="text-[11px] text-success-text mt-1">{ipFeedback}</p>}
+          {ipFeedback && <p className="text-[11px] text-success-text mt-1">{ipFeedback}</p>}
           {configError && <p className="text-[11px] text-danger-text mt-1">⚠ {configError}</p>}
         </div>
 
