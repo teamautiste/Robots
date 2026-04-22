@@ -66,7 +66,7 @@ class JogEngine:
     def _load_ip_config(self):
         if os.path.exists("robots_IPS.json"):
             with open("robots_IPS.json", "r") as f:
-                self.state.robots43_ip = json.load(f)
+                self.state.robots_ip = json.load(f)
         else:
             self.state.robots_ip = {
                 f"Robot_{i}": f"192.168.1.{i}" for i in range(1, 9)

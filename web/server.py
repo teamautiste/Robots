@@ -128,7 +128,6 @@ def stop_sequence():
 
 @app.route("/api/config", methods=["GET"])
 def get_config():
-    print(jsonify(engine.get_to_config()))
     return jsonify(engine.get_ip_config())
 
 
