@@ -5,7 +5,7 @@ import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QItemDelegate, QLineEdit,
                              QDialog, QTableWidgetItem)
-from PyQt6.QtCore import QTimer, QThread, Qt
+from PyQt6.QtCore import QTimer, QThread, Qt, QMetaObject
 from PyQt6.QtGui import QDoubleValidator
 from PyQt6.uic import loadUi
 from pymycobot import MyCobot320
@@ -360,8 +360,8 @@ class JogInterface(QMainWindow):
                             break
 
                 self.currentRecipe[self.currentRobot] = self.currentRobotPoints
-                with open(f"{self.recipePath}\\{self.recipes[(self.ui.Recipe_comboBox.currentIndex() - 1)]}.json", "w") as file:
-                    json.dump(self.currentRecipe,file, indent=4)
+                with open(f"{self.recipePath}\\{self.recipes[(self.ui.Recipe_comboBox.currentIndex())]}.json", "w") as file:
+                    json.dump(self.currentRecipe, file, indent=4)
 
                 if self.ui.PointsComboBox.currentIndex() == 0:
                     self.ui.PointSavedLabel.setText(f"New point saved as: {pointname}")
@@ -401,7 +401,7 @@ class JogInterface(QMainWindow):
 
     def change_run_recipe(self):
         if self.ui.Recipe_comboBox.currentIndex() > 0:
-            recipepath = f"{self.recipePath}\\{self.recipes[(self.ui.Recipe_comboBox.currentIndex() - 1)]}.json"
+            recipepath = f"{self.recipePath}\\{self.recipes[(self.ui.Recipe_comboBox.currentIndex())-1]}.json"
             if os.path.exists(recipepath):
                 with open(recipepath,"r") as f:
                     self.runRecipe = json.load(f)
@@ -682,15 +682,17 @@ class JogInterface(QMainWindow):
             self.jog_timer.stop()
 
     def move_to_point(self):
-        index = self.ui.PointsComboBox.currentIndex()
-        pointslist = list(self.currentRobotPoints.values())
+        selection = self.ui.PointsComboBox.currentText()
+        pointslist = self.currentRobotPoints
 
         try:
             self.mc.clear_error_information()
             self.mc.focus_all_servos()
 
-            if index != 0:
-                target = pointslist[index - 1]
+            if selection != "New Point":
+                for p in self.currentRobotPoints:
+                    if p["name"] == selection:
+                        target = p["coords"]
                 self.mc.send_angles(target, self.speed)
         except Exception as e:
             self.ui.statusLabel.setText(f"Robot connection Error: {e}")
@@ -751,6 +753,7 @@ class JogInterface(QMainWindow):
     def start_sequence(self):
         self.sequence_index = 0
         self.setup_robot_threads()
+        print("Starting")
         if len(self.robot_connections) < 1:
             print("No Robots Connected")
             return
@@ -778,7 +781,7 @@ class JogInterface(QMainWindow):
     def _stop_next_robot(self):
         if self.sequence_index < 0:
             print("Stop sequence finished")
-            self._disconnect_signals()
+            #self._disconnect_signals()
             self.ui.run_Button.setEnabled(True)
             self.ui.stop_Button.setEnabled(False)
             return

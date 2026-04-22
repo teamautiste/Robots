@@ -17,7 +17,6 @@ def open_browser():
     time.sleep(1.2)
     webbrowser.open(f"http://{HOST}:{PORT}")
 
-
 if __name__ == "__main__":
     engine = JogEngine(recipe_path="recipes")
     init_engine(engine)

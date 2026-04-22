@@ -28,24 +28,28 @@ class RobotRun(QObject):
         for point in self.points:
             if self.stopping:
                 break
-
+            print(self.points)
+            print(point)
             self.mc.send_angles(point["coords"], self.speed)
+            print("moving")
 
-            if self.mc.get_error_information != 0:
+            if self.mc.get_error_information() != 0:
+                print(self.mc.get_error_information())
                 error_message = self.get_error()
+                print(error_message)
                 self.UpdateStatus.emit(self.id, "Error")
                 self.ErrorInformation.emit(self.id, error_message)
                 break
 
             self.UpdateStatus.emit(self.id, "Moving")
-            while self.mc.is_moving == 1:
-                if self.mc.get_error_information != 0:
+            while self.mc.is_moving() == 1:
+                if self.mc.get_error_information() != 0:
                     error_message = self.get_error()
                     self.UpdateStatus.emit(self.id, "Error")
                     self.ErrorInformation.emit(self.id, error_message)
                     break
                 time.sleep(0.05)
-        self.UpdateStatus(self.id, "In postion")
+        self.UpdateStatus.emit(self.id, "In postion")
         self.FinishForward.emit(True)
 
     @pyqtSlot()
@@ -56,15 +60,15 @@ class RobotRun(QObject):
         for point in reversed(self.points):
             self.mc.send_angles(point["coords"], self.speed)
 
-            if self.mc.get_error_information != 0:
+            if self.mc.get_error_information() != 0:
                 error_message = self.get_error()
                 self.UpdateStatus.emit(self.id, "Error")
                 self.ErrorInformation.emit(self.id, error_message)
                 break
 
             self.UpdateStatus.emit(self.id, "Moving")
-            while self.mc.is_moving == 1:
-                if self.mc.get_error_information != 0:
+            while self.mc.is_moving() == 1:
+                if self.mc.get_error_information() != 0:
                     error_message = self.get_error()
                     self.UpdateStatus.emit(self.id, "Error")
                     self.ErrorInformation.emit(self.id, error_message)

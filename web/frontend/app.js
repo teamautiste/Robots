@@ -348,7 +348,6 @@ function feedback(msg, level) {
   el.style.color = level === 'err' ? 'var(--danger-text)' : level === 'ok' ? 'var(--success-text)' : 'var(--text-secondary)';
 }
 
-/* ── SEQUENCE ───────────────────────────────────────────────────────────── */
 async function startSequence() {
   const recipe = document.getElementById('main-recipe-select').value;
   if (!recipe) return alert('Selecciona una receta primero');
@@ -374,7 +373,6 @@ function setRunning(running) {
   }
 }
 
-/* ── MAIN RECIPE SELECT ─────────────────────────────────────────────────── */
 function onMainRecipeChange() {
   state.selectedRecipe = document.getElementById('main-recipe-select').value;
 }
@@ -387,9 +385,9 @@ function updateMainRecipeSelect() {
   if (cur) sel.value = cur;
 }
 
-/* ── CONFIG TAB ─────────────────────────────────────────────────────────── */
 async function loadConfig() {
   const data = await api('GET', '/api/config');
+  console.log(data);
   const tbody = document.getElementById('ip-table');
   tbody.innerHTML = Array.from({ length: 8 }, (_, i) => {
     const key = `Robot_${i + 1}`;
@@ -421,7 +419,6 @@ async function connectRobot(index) {
   await api('POST', `/api/robots/${index}/connect`);
 }
 
-/* ── RECIPE MANAGEMENT ──────────────────────────────────────────────────── */
 async function loadRecipesForConfig() {
   state.recipes = await api('GET', '/api/recipes');
   if (!Array.isArray(state.recipes)) state.recipes = [];
