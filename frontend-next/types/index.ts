@@ -38,6 +38,11 @@ export type RecipeData = Record<string, Point[]>; // key = "Robot N"
 
 export type IpConfig = Record<string, string>; // "Robot_1" → "192.168.1.1"
 
+export interface FullConfig {
+  ips: IpConfig;
+  general_params: GeneralParams;
+}
+
 // ── LOG ───────────────────────────────────────────────────────────────────
 
 export type LogLevel = 'ok' | 'err' | 'warn' | 'info';

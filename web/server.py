@@ -128,12 +128,12 @@ def stop_sequence():
 
 @app.route("/api/config", methods=["GET"])
 def get_config():
-    return jsonify(engine.get_ip_config())
+    return jsonify(engine.get_full_config())
 
 
 @app.route("/api/config", methods=["POST"])
 def save_config():
-    return jsonify(engine.save_ip_config(request.get_json()))
+    return jsonify(engine.save_full_config(request.get_json()))
 
 
 @app.route("/api/status", methods=["GET"])

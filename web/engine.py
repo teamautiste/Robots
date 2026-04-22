@@ -63,23 +63,48 @@ class JogEngine:
             self.state.log = self.state.log[-200:]
         self._emit("log", entry)
 
+    _DEFAULT_GENERAL_PARAMS = {
+        "maxSpeed": 100,
+        "acceleration": 200,
+        "timeout": 5,
+        "retries": 3,
+        "port": 9000,
+    }
+
     def _load_ip_config(self):
         if os.path.exists("robots_IPS.json"):
             with open("robots_IPS.json", "r") as f:
-                self.state.robots_ip = json.load(f)
+                raw = json.load(f)
+            # Support both old format (flat IPs dict) and new format with nested keys
+            if "ips" in raw:
+                self.state.robots_ip = raw["ips"]
+                self.state.general_params = {**self._DEFAULT_GENERAL_PARAMS, **raw.get("general_params", {})}
+            else:
+                # Legacy: entire file is the IPs dict
+                self.state.robots_ip = raw
+                self.state.general_params = dict(self._DEFAULT_GENERAL_PARAMS)
         else:
             self.state.robots_ip = {
                 f"Robot_{i}": f"192.168.1.{i}" for i in range(1, 9)
             }
+            self.state.general_params = dict(self._DEFAULT_GENERAL_PARAMS)
 
-    def get_ip_config(self):
-        return self.state.robots_ip
+    def get_full_config(self):
+        return {
+            "ips": self.state.robots_ip,
+            "general_params": self.state.general_params,
+        }
 
-    def save_ip_config(self, data):
-        self.state.robots_ip = data
+    def save_full_config(self, data):
+        self.state.robots_ip = data.get("ips", self.state.robots_ip)
+        self.state.general_params = {**self._DEFAULT_GENERAL_PARAMS, **data.get("general_params", {})}
+        payload = {
+            "ips": self.state.robots_ip,
+            "general_params": self.state.general_params,
+        }
         with open("robots_IPS.json", "w") as f:
-            json.dump(data, f, indent=4)
-        self._log("ok", "[OK] IP config saved")
+            json.dump(payload, f, indent=4)
+        self._log("ok", "[OK] Config saved")
         return {"success": True}
 
     def connect_robot(self, index):

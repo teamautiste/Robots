@@ -22,7 +22,6 @@ export default function ConfigTab() {
   const setSelectedPointRow = useAppStore((s) => s.setSelectedPointRow);
   const currentRecipeData = useAppStore((s) => s.currentRecipeData);
   const setCurrentRecipeData = useAppStore((s) => s.setCurrentRecipeData);
-  // TODO: wire generalParams to backend when endpoint is available
   const generalParams     = useAppStore((s) => s.generalParams);
   const setGeneralParams  = useAppStore((s) => s.setGeneralParams);
 
@@ -37,9 +36,10 @@ export default function ConfigTab() {
   // ── Load config ────────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     const [cfg, recs] = await Promise.all([apiGetConfig(), apiListRecipes()]);
-    setIpConfig(cfg);
+    setIpConfig(cfg.ips ?? {});
+    setGeneralParams(cfg.general_params ?? {});
     setRecipes(Array.isArray(recs) ? recs : []);
-  }, [setRecipes]);
+  }, [setRecipes, setGeneralParams]);
 
   // Lazy-load on first render when tab becomes visible
   useState(() => { loadAll(); });
@@ -139,7 +139,7 @@ export default function ConfigTab() {
   async function handleSaveConfig() {
     setConfigError('');
     try {
-      await apiSaveConfig(ipConfig);
+      await apiSaveConfig({ ips: ipConfig, general_params: generalParams });
       setIpFeedback('✓ Configuración guardada');
       setTimeout(() => setIpFeedback(''), 2000);
     } catch {

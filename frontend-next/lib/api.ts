@@ -1,4 +1,4 @@
-import type { IpConfig, RecipeData, Robot, RobotPosition } from '@/types';
+import type { FullConfig, IpConfig, RecipeData, Robot, RobotPosition } from '@/types';
 
 const BASE = '';
 
@@ -76,9 +76,9 @@ export const apiStopSequence = () =>
 // ── CONFIG ────────────────────────────────────────────────────────────────
 
 export const apiGetConfig = () =>
-  request<IpConfig>('GET', '/api/config');
+  request<FullConfig>('GET', '/api/config');
 
-export const apiSaveConfig = (data: IpConfig) =>
+export const apiSaveConfig = (data: FullConfig) =>
   request<{ success: boolean }>('POST', '/api/config', data);
 
 // ── SWR FETCHER ───────────────────────────────────────────────────────────

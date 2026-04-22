@@ -184,7 +184,7 @@ export const useAppStore = create<AppStore>((set) => ({
   feedback: null,
   setFeedback: (feedback) => set({ feedback }),
 
-  // ── General params (TODO: wire to backend when endpoint is available) ──
+  // ── General params ─────────────────────────────────────────────────────
   generalParams: { maxSpeed: 100, acceleration: 200, timeout: 5, retries: 3, port: 9000 },
   setGeneralParams: (params) =>
     set((state) => ({ generalParams: { ...state.generalParams, ...params } })),
