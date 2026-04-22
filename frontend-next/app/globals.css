@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── KEYFRAME ANIMATIONS (not achievable purely in Tailwind) ─────────────── */
+
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+@keyframes blink {
+  50% { opacity: 0.3; }
+}
+
+@keyframes slide-down {
+  from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* ── APPLIED ANIMATION CLASSES ───────────────────────────────────────────── */
+
+.animate-pulse-danger { animation: pulse-danger 1.5s infinite; }
+.animate-blink        { animation: blink 0.8s infinite; }
+.animate-slide-down   { animation: slide-down 0.3s ease; }
+
+/* ── CUSTOM SCROLLBAR ────────────────────────────────────────────────────── */
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: #cbcac5; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #185fa5; }
+
+/* ── RANGE INPUT ─────────────────────────────────────────────────────────── */
+input[type=range] {
+  -webkit-appearance: none;
+  flex: 1;
+  height: 4px;
+  background: #e2e2dc;
+  border-radius: 2px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #185fa5;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* ── JOG BUTTON ACTIVE STATES ────────────────────────────────────────────── */
+.jog-btn-plus:active  { background: #e6f1fb !important; color: #185fa5 !important; border-color: #185fa5 !important; transform: scale(0.95); }
+.jog-btn-minus:active { background: #fcebeb !important; color: #a32d2d !important; border-color: #e24b4a !important; transform: scale(0.95); }
