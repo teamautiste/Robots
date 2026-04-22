@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import JogButton from '@/components/ui/JogButton';
 import LogBox from '@/components/ui/LogBox';
 import StatusDot from '@/components/ui/StatusDot';
@@ -190,10 +190,10 @@ export default function JoggingTab() {
           </div>
           <div className="grid grid-cols-4 gap-[6px] mb-3">
             {axes.map((ax) => (
-              <>
-                <JogButton key={`${ax}-`} axis={ax} direction={-1} disabled={!currentRobotId} onJog={() => doJog(ax, -1)} />
-                <JogButton key={`${ax}+`} axis={ax} direction={1}  disabled={!currentRobotId} onJog={() => doJog(ax, 1)} />
-              </>
+              <React.Fragment key={ax}>
+                <JogButton axis={ax} direction={-1} disabled={!currentRobotId} onJog={() => doJog(ax, -1)} />
+                <JogButton axis={ax} direction={1}  disabled={!currentRobotId} onJog={() => doJog(ax, 1)} />
+              </React.Fragment>
             ))}
           </div>
 
