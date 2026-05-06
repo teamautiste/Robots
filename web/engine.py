@@ -318,6 +318,8 @@ class JogEngine:
             return {"success": False, "error": "Recipe not found"}
         if self.state.sequence_running:
             return {"success": False, "error": "Sequence already running"}
+        if not self.state.robots:
+            return {"success": False, "error": "No robots found"}
 
         self.state.sequence_running = True
         self.state.sequence_recipe = recipe_name
@@ -327,6 +329,7 @@ class JogEngine:
             for i in sorted(self.state.get_all_robots().keys())
             if self.state.get_robot(i).get("Connection")
         ]
+        
 
         def _run():
             for robot_id, robot in connected:

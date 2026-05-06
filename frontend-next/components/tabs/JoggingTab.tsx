@@ -12,32 +12,32 @@ import {
 } from '@/lib/api';
 import type { JogStep } from '@/types';
 
-const JOINT_AXES  = ['J1','J2','J3','J4','J5','J6'];
-const CART_AXES   = ['X','Y','Z','Rx','Ry','Rz'];
-const JOINT_UNITS = ['°','°','°','°','°','°'];
-const CART_UNITS  = ['mm','mm','mm','°','°','°'];
+const JOINT_AXES = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6'];
+const CART_AXES = ['X', 'Y', 'Z', 'Rx', 'Ry', 'Rz'];
+const JOINT_UNITS = ['°', '°', '°', '°', '°', '°'];
+const CART_UNITS = ['mm', 'mm', 'mm', '°', '°', '°'];
 const STEPS: JogStep[] = [1, 5, 10, 50];
 
 export default function JoggingTab() {
-  const robots          = useAppStore((s) => s.robots);
-  const currentRobotId  = useAppStore((s) => s.currentRobotId);
+  const robots = useAppStore((s) => s.robots);
+  const currentRobotId = useAppStore((s) => s.currentRobotId);
   const setCurrentRobotId = useAppStore((s) => s.setCurrentRobotId);
-  const jogMode         = useAppStore((s) => s.jogMode);
-  const setJogMode      = useAppStore((s) => s.setJogMode);
-  const jogStep         = useAppStore((s) => s.jogStep);
-  const setJogStep      = useAppStore((s) => s.setJogStep);
-  const jogSpeed        = useAppStore((s) => s.jogSpeed);
-  const setJogSpeed     = useAppStore((s) => s.setJogSpeed);
-  const teachRecipe     = useAppStore((s) => s.teachRecipe);
-  const setTeachRecipe  = useAppStore((s) => s.setTeachRecipe);
-  const recipes         = useAppStore((s) => s.recipes);
-  const logs            = useAppStore((s) => s.logs);
+  const jogMode = useAppStore((s) => s.jogMode);
+  const setJogMode = useAppStore((s) => s.setJogMode);
+  const jogStep = useAppStore((s) => s.jogStep);
+  const setJogStep = useAppStore((s) => s.setJogStep);
+  const jogSpeed = useAppStore((s) => s.jogSpeed);
+  const setJogSpeed = useAppStore((s) => s.setJogSpeed);
+  const teachRecipe = useAppStore((s) => s.teachRecipe);
+  const setTeachRecipe = useAppStore((s) => s.setTeachRecipe);
+  const recipes = useAppStore((s) => s.recipes);
+  const logs = useAppStore((s) => s.logs);
   const currentPosition = useAppStore((s) => s.currentPosition);
 
   const [teachPoints, setTeachPoints] = useState<string[]>([]);
   const [selectedTeachPoint, setSelectedTeachPoint] = useState('__new__');
   const [newPointName, setNewPointName] = useState('');
-  const [teachFeedback, setTeachFeedback] = useState<{msg:string;ok:boolean}|null>(null);
+  const [teachFeedback, setTeachFeedback] = useState<{ msg: string; ok: boolean } | null>(null);
   const [servoError, setServoError] = useState('');
 
   useRobotPosition(currentRobotId);
@@ -45,9 +45,9 @@ export default function JoggingTab() {
   const connectedRobots = robots.filter((r) => r.connected);
   const currentRobot = robots.find((r) => r.id === currentRobotId);
 
-  const axes  = jogMode === 'joint' ? JOINT_AXES  : CART_AXES;
+  const axes = jogMode === 'joint' ? JOINT_AXES : CART_AXES;
   const units = jogMode === 'joint' ? JOINT_UNITS : CART_UNITS;
-  const vals  = jogMode === 'joint'
+  const vals = jogMode === 'joint'
     ? (currentPosition?.angles ?? new Array(6).fill(0))
     : (currentPosition?.coords ?? new Array(6).fill(0));
 
@@ -87,7 +87,7 @@ export default function JoggingTab() {
 
   async function handleTeach() {
     if (!currentRobotId) { setTeachFeedback({ msg: 'Selecciona un robot', ok: false }); return; }
-    if (!teachRecipe)    { setTeachFeedback({ msg: 'Selecciona una receta', ok: false }); return; }
+    if (!teachRecipe) { setTeachFeedback({ msg: 'Selecciona una receta', ok: false }); return; }
 
     let pointName = selectedTeachPoint;
     if (pointName === '__new__') {
@@ -114,7 +114,7 @@ export default function JoggingTab() {
 
   async function handleGoTo() {
     if (!currentRobotId) { setTeachFeedback({ msg: 'Selecciona un robot', ok: false }); return; }
-    if (!teachRecipe)    { setTeachFeedback({ msg: 'Selecciona una receta', ok: false }); return; }
+    if (!teachRecipe) { setTeachFeedback({ msg: 'Selecciona una receta', ok: false }); return; }
     if (selectedTeachPoint === '__new__') { setTeachFeedback({ msg: 'Selecciona un punto guardado', ok: false }); return; }
     try {
       const res = await apiGoToPoint(currentRobotId, teachRecipe, selectedTeachPoint, jogSpeed);
@@ -128,87 +128,45 @@ export default function JoggingTab() {
   const dotStatus = currentRobot?.status ?? 'disconnected';
 
   return (
-    <div className="p-5 h-full overflow-y-auto">
-      {/* Controls row */}
-      <div className="flex flex-wrap gap-[10px] items-end mb-4">
-        {/* Jog mode pills */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Modo</label>
-          <div className="flex gap-1">
-            {(['joint','cartesian'] as const).map((m) => (
-              <button key={m} onClick={() => setJogMode(m)}
-                className={`px-[14px] py-1 rounded-full text-[11px] font-medium border transition-all ${
-                  jogMode === m ? 'bg-accent border-accent text-white' : 'bg-transparent border-border-primary text-text-secondary hover:bg-bg-secondary'
-                }`}>
-                {m === 'joint' ? 'Joint' : 'Cartesiano'}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="p-5  h-full overflow-y-auto">
+      <div className="grid grid-cols-2 grid-flow-row gap-[20px] mb-[20px]">
+        <div className='row-span-3 bg-bg-primary border border-border-secondary rounded-lg p-4'>
 
-        {/* Robot select */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Robot</label>
-          <select value={currentRobotId ?? ''} onChange={(e) => handleRobotChange(e.target.value)}
-            className="h-8 px-[10px] border border-border-primary rounded-md bg-bg-primary text-text-primary text-[12px] outline-none focus:border-accent w-[130px]">
-            <option value="">— Ninguno —</option>
-            {connectedRobots.map((r) => <option key={r.id} value={r.id}>Robot {r.id}</option>)}
-          </select>
-        </div>
+          <div className="flex flex-row justify-between ">
+            <div className="flex flex-col gap-1 mb-[20px]">
+              <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Robot</label>
+              <select value={currentRobotId ?? ''} onChange={(e) => handleRobotChange(e.target.value)}
+                className="h-7 px-[10px] border border-border-primary rounded-md bg-bg-primary text-text-primary text-[12px] outline-none focus:border-accent w-[130px]">
+                <option value="">— Ninguno —</option>
+                {connectedRobots.map((r) => <option key={r.id} value={r.id}>Robot {r.id}</option>)}
+              </select>
+            </div>
 
-        {/* Step pills */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Paso (mm / °)</label>
-          <div className="flex gap-1">
-            {STEPS.map((s) => (
-              <button key={s} onClick={() => setJogStep(s)}
-                className={`px-[14px] py-1 rounded-full text-[11px] font-medium border transition-all ${
-                  jogStep === s ? 'bg-accent border-accent text-white' : 'bg-transparent border-border-primary text-text-secondary hover:bg-bg-secondary'
-                }`}>
-                {s}
-              </button>
-            ))}
+            {/* Jog mode pills */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Modo</label>
+              <div className="flex gap-1">
+                {(['joint', 'cartesian'] as const).map((m) => (
+                  <button key={m} onClick={() => setJogMode(m)}
+                    className={`px-[14px] py-1 rounded-full text-[11px] font-medium border transition-all ${jogMode === m ? 'bg-accent border-accent text-white' : 'bg-transparent border-border-primary text-text-secondary hover:bg-bg-secondary'
+                      }`}>
+                    {m === 'joint' ? 'Joint' : 'Cartesiano'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Jog speed slider */}
-        <div className="flex flex-col gap-1 min-w-[150px]">
-          <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Velocidad jog</label>
-          <div className="flex items-center gap-2">
-            <input type="range" min={1} max={100} value={jogSpeed} onChange={(e) => setJogSpeed(Number(e.target.value))} className="flex-1" />
-            <span className="text-[13px] font-semibold min-w-[36px] text-right">{jogSpeed}%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Two-column layout */}
-      <div className="grid grid-cols-2 gap-[14px]">
-        {/* Left: jog grid + servo controls */}
-        <div>
-          <div className="text-[10px] font-semibold text-text-secondary uppercase tracking-[.07em] mb-[10px]">
-            {jogMode === 'joint' ? 'Ejes de junta' : 'Ejes cartesianos'}
-          </div>
           <div className="grid grid-cols-4 gap-[6px] mb-3">
             {axes.map((ax) => (
               <React.Fragment key={ax}>
                 <JogButton axis={ax} direction={-1} disabled={!currentRobotId} onJog={() => doJog(ax, -1)} />
-                <JogButton axis={ax} direction={1}  disabled={!currentRobotId} onJog={() => doJog(ax, 1)} />
+                <JogButton axis={ax} direction={1} disabled={!currentRobotId} onJog={() => doJog(ax, 1)} />
               </React.Fragment>
             ))}
           </div>
 
-          <div className="flex gap-2 mb-3">
-            <button onClick={handleRelease}
-              className="h-8 px-[14px] rounded-md bg-danger-light border border-danger text-danger-text text-[12px] font-medium hover:bg-[#f8d4d4] transition-colors">
-              🔓 Liberar servos
-            </button>
-            <button onClick={handleFocus}
-              className="h-8 px-[14px] rounded-md bg-bg-primary border border-border-primary text-text-primary text-[12px] font-medium hover:bg-bg-secondary transition-colors">
-              🔒 Enfocar servos
-            </button>
-          </div>
           {servoError && <p className="text-[11px] text-danger-text mb-2">⚠ {servoError}</p>}
-
           <div className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border border-border-secondary rounded-md text-[11px] text-text-secondary">
             <StatusDot status={dotStatus} />
             <span>
@@ -219,47 +177,72 @@ export default function JoggingTab() {
                 : 'Sin robot conectado'}
             </span>
           </div>
+
         </div>
 
-        {/* Right: position table + log */}
-        <div className="flex flex-col gap-3">
-          {/* Position */}
-          <div className="bg-bg-primary border border-border-secondary rounded-lg p-[12px_16px]">
-            <div className="text-[10px] font-semibold text-text-secondary uppercase tracking-[.07em] mb-[10px]">
-              Posición actual — {currentRobotId ? `Robot ${currentRobotId}` : '—'}
+
+        <div className="grid grid-cols-2 row-span-2 bg-bg-primary border border-border-secondary rounded-lg gap-4 p-[12px_16px]">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-text-secondary">PASO (mm / °)</label>
+            <div className="flex flex-row gap-[5px] mb-2">
+              {STEPS.map((s) => (
+                <button key={s} onClick={() => setJogStep(s)}
+                  className={`px-[11px] py-1 rounded-full text-[10px] font-medium border transition-all ${jogStep === s ? 'bg-accent border-accent text-white' : 'bg-transparent border-border-primary text-text-secondary hover:bg-bg-secondary'
+                    }`}>
+                  {s}
+                </button>
+              ))}
             </div>
-            <table className="w-full border-collapse text-[12px]">
-              <thead>
-                <tr>
-                  {['Eje','Valor','Unidad'].map((h,i) => (
-                    <th key={h} className={`bg-bg-secondary px-[10px] py-[6px] text-[10px] font-semibold text-text-secondary uppercase tracking-[.05em] border-b border-border-secondary ${i>0?'text-right':''}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {axes.map((ax, i) => (
-                  <tr key={ax} className="border-b border-border-secondary last:border-b-0">
-                    <td className="px-[10px] py-[7px]">{ax}</td>
-                    <td className="px-[10px] py-[7px] font-semibold text-accent text-right tabular-nums">
-                      {(vals[i] ?? 0).toFixed(2)}
-                    </td>
-                    <td className="px-[10px] py-[7px] text-text-secondary text-right">{units[i]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
 
-          {/* Log */}
-          <div className="bg-bg-primary border border-border-secondary rounded-lg p-[12px_16px]">
-            <div className="text-[10px] font-semibold text-text-secondary uppercase tracking-[.07em] mb-[10px]">Registro de movimientos</div>
-            <LogBox logs={logs} />
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-text-secondary uppercase tracking-[.05em]">Velocidad jog</label>
+            <div className="flex items-center gap-2">
+              <input type="range" min={1} max={100} value={jogSpeed} onChange={(e) => setJogSpeed(Number(e.target.value))} className="flex-1" />
+              <span className="text-[13px] font-semibold min-w-[36px] text-right">{jogSpeed}%</span>
+            </div>
           </div>
+
+          <div className="flex flex-row col-span-2 gap-2 items-center justify-center mt-[12px]">
+            <button onClick={handleRelease}
+              className="h-8 px-[14px] rounded-md bg-danger-light border border-danger text-danger-text text-[12px] font-medium hover:bg-[#f8d4d4] transition-colors">
+              🔓 Liberar servos
+            </button>
+            <button onClick={handleFocus}
+              className="h-8 px-[14px] rounded-md bg-bg-primary border border-border-primary text-text-primary text-[12px] font-medium hover:bg-bg-secondary transition-colors">
+              🔒 Enfocar servos
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-bg-primary border border-border-secondary rounded-lg p-[12px_16px]">
+          <div className="text-[10px] font-semibold text-text-secondary uppercase tracking-[.07em] mb-[10px]">
+            Posición actual — {currentRobotId ? `Robot ${currentRobotId}` : '—'}
+          </div>
+          <table className="w-full border-collapse text-[12px]">
+            <thead>
+              <tr>
+                {['Eje', 'Valor', 'Unidad'].map((h, i) => (
+                  <th key={h} className={`bg-bg-secondary px-[10px] py-[6px] text-[10px] font-semibold text-text-secondary uppercase tracking-[.05em] border-b border-border-secondary ${i > 0 ? 'text-right' : ''}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {axes.map((ax, i) => (
+                <tr key={ax} className="border-b border-border-secondary last:border-b-0">
+                  <td className="px-[10px] py-[7px]">{ax}</td>
+                  <td className="px-[10px] py-[7px] font-semibold text-accent text-right tabular-nums">
+                    {(vals[i] ?? 0).toFixed(2)}
+                  </td>
+                  <td className="px-[10px] py-[7px] text-text-secondary text-right">{units[i]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Teach section */}
-      <div className="mt-[14px] border border-border-secondary rounded-lg p-[14px_20px]">
+      <div className="border border-border-secondary rounded-lg p-[14px_20px]">
         <div className="text-[10px] font-semibold text-text-secondary uppercase tracking-[.07em] mb-[10px]">Teach & navegación de puntos</div>
         <div className="flex flex-wrap gap-2 items-end border-t border-border-secondary pt-[14px] mt-[14px]">
           {/* Recipe */}
@@ -312,6 +295,11 @@ export default function JoggingTab() {
           </p>
         )}
       </div>
+      <div className="bg-bg-primary border border-border-secondary rounded-lg p-[12px_16px] my-[20px]">
+        <div className="text-[10px] font-semibold text-text-secondary uppercase tracking-[.07em] mb-[10px]">Registro de movimientos</div>
+        <LogBox logs={logs} />
+      </div>
+
     </div>
   );
 }

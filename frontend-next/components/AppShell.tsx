@@ -31,7 +31,7 @@ export default function AppShell() {
         <AppHeader />
 
         {/* Tab bar + content */}
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex flex-row flex-1 min-h-0">
           {/* Tab bar */}
           <div className="flex gap-[2px] px-4 bg-bg-primary border-x border-t border-border-secondary rounded-t-lg shadow-sm">
             {TABS.map(({ id, label }) => (
