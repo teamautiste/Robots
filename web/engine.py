@@ -1,3 +1,4 @@
+from string import templatelib
 import json
 import os
 import threading
@@ -9,6 +10,7 @@ try:
     from pymycobot import MyCobot320Socket
 except ImportError:
     MyCobot320Socket = None
+
 
 class AppState:
     def __init__(self):
@@ -33,6 +35,7 @@ class AppState:
     def get_all_robots(self):
         with self._lock:
             return dict(self.robots)
+
 
 class JogEngine:
     def __init__(self, recipe_path="recipes"):
@@ -78,7 +81,8 @@ class JogEngine:
             # Support both old format (flat IPs dict) and new format with nested keys
             if "ips" in raw:
                 self.state.robots_ip = raw["ips"]
-                self.state.general_params = {**self._DEFAULT_GENERAL_PARAMS, **raw.get("general_params", {})}
+                self.state.general_params = {
+                    **self._DEFAULT_GENERAL_PARAMS, **raw.get("general_params", {})}
             else:
                 # Legacy: entire file is the IPs dict
                 self.state.robots_ip = raw
@@ -97,7 +101,8 @@ class JogEngine:
 
     def save_full_config(self, data):
         self.state.robots_ip = data.get("ips", self.state.robots_ip)
-        self.state.general_params = {**self._DEFAULT_GENERAL_PARAMS, **data.get("general_params", {})}
+        self.state.general_params = {
+            **self._DEFAULT_GENERAL_PARAMS, **data.get("general_params", {})}
         payload = {
             "ips": self.state.robots_ip,
             "general_params": self.state.general_params,
@@ -110,25 +115,33 @@ class JogEngine:
     def connect_robot(self, index):
         ip_key = f"Robot_{index}"
         ip = self.state.robots_ip.get(ip_key, f"192.168.1.{index}")
-        self.state.update_robot(index, ID=index, Connection=None, status="connecting", error="", ip=ip)
-        self._emit("robot_status", {"robot_id": index, "status": "connecting", "error": "", "ip": ip})
+        self.state.update_robot(
+            index, ID=index, Connection=None, status="connecting", error="", ip=ip)
+        self._emit("robot_status", {"robot_id": index,
+                   "status": "connecting", "error": "", "ip": ip})
 
         def _connect():
             if MyCobot320Socket is None:
-                self.state.update_robot(index, status="error", error="pymycobot not installed", Connection=None)
-                self._emit("robot_status", {"robot_id": index, "status": "error", "error": "pymycobot not installed", "ip": ip})
+                self.state.update_robot(
+                    index, status="error", error="pymycobot not installed", Connection=None)
+                self._emit("robot_status", {
+                           "robot_id": index, "status": "error", "error": "pymycobot not installed", "ip": ip})
                 return
             try:
                 mc = MyCobot320Socket(ip, 9000)
                 mc.power_on()
                 mc.clear_error_information()
-                self.state.update_robot(index, Connection=mc, status="connected", error="")
+                self.state.update_robot(
+                    index, Connection=mc, status="connected", error="")
                 self._log("ok", f"[OK] Robot {index} connected ({ip})")
-                self._emit("robot_status", {"robot_id": index, "status": "connected", "error": "", "ip": ip})
+                self._emit("robot_status", {
+                           "robot_id": index, "status": "connected", "error": "", "ip": ip})
             except Exception as e:
-                self.state.update_robot(index, Connection=None, status="error", error=str(e))
+                self.state.update_robot(
+                    index, Connection=None, status="error", error=str(e))
                 self._log("err", f"[ERR] Robot {index} connection failed: {e}")
-                self._emit("robot_status", {"robot_id": index, "status": "error", "error": str(e), "ip": ip})
+                self._emit("robot_status", {
+                           "robot_id": index, "status": "error", "error": str(e), "ip": ip})
 
         threading.Thread(target=_connect, daemon=True).start()
         return {"success": True, "message": f"Connecting to Robot {index} at {ip}..."}
@@ -150,18 +163,19 @@ class JogEngine:
 
     def get_position(self, index):
         robot = self.state.get_robot(index)
-        mc = robot.get("Connection")
-        if not mc:
-            return {"angles": [0] * 6, "coords": [0] * 6, "connected": False}
         try:
-            angles = mc.get_angles() or [0] * 6
-            coords = mc.get_coords() or [0] * 6
-            if not isinstance(angles, list) or len(angles) != 6:
-                angles = [0] * 6
-            if not isinstance(coords, list) or len(coords) != 6:
-                coords = [0] * 6
+            mc = robot.get("Connection")
+            angles = mc.get_angles()
+            coords = mc.get_coords()
             return {"angles": angles, "coords": coords, "connected": True}
-        except Exception:
+
+        except Exception as e:
+            self.state.update_robot(
+                index, ID=index, Connection=None, status="error", error=str(e))
+            self._emit("robot_status", {
+                       "robot_id": index, "status": "error", "error": str(e)})
+            self._log(
+                "err", f"[ERR] Robot {index} failed to get position: {e}")
             return {"angles": [0] * 6, "coords": [0] * 6, "connected": False}
 
     def jog(self, index, mode, axis, direction, step, speed):
@@ -180,7 +194,8 @@ class JogEngine:
                 coord_idx = axes.index(axis) + 1
                 current = mc.get_coords()[coord_idx - 1]
                 mc.send_coord(coord_idx, current + direction * step, speed)
-            self._log("ok", f"[JOG] Robot {index} {axis} {'+' if direction > 0 else '-'}{step}")
+            self._log(
+                "ok", f"[JOG] Robot {index} {axis} {'+' if direction > 0 else '-'}{step}")
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -287,7 +302,8 @@ class JogEngine:
         filepath = os.path.join(self.recipe_path, f"{recipe_name}.json")
         with open(filepath, "w") as f:
             json.dump(recipe, f, indent=4)
-        self._log("ok", f"[TEACH] Robot {robot_index} '{point_name}' saved in '{recipe_name}'")
+        self._log(
+            "ok", f"[TEACH] Robot {robot_index} '{point_name}' saved in '{recipe_name}'")
         return {"success": True, "angles": angles}
 
     def move_to_point(self, robot_index, recipe_name, point_name, speed):
@@ -329,7 +345,6 @@ class JogEngine:
             for i in sorted(self.state.get_all_robots().keys())
             if self.state.get_robot(i).get("Connection")
         ]
-        
 
         def _run():
             for robot_id, robot in connected:
@@ -337,20 +352,76 @@ class JogEngine:
                     break
                 robot_key = f"Robot {robot_id}"
                 points = recipe.get(robot_key, [])
+                current_sequence = []
                 mc = robot.get("Connection")
                 if not mc:
                     continue
                 try:
+                    mc.clear_error_information()
                     mc.focus_all_servos()
                     for i, point in enumerate(points):
                         if not self.state.sequence_running:
                             break
                         mc.send_angles(point["coords"], speed)
+                        current_sequence.append(point)
                         self._emit("sequence_progress", {
                             "robot_id": robot_id, "step": i + 1,
                             "total": len(points), "status": "Moving",
                         })
-                        self._log("ok", f"[SEQ] Robot {robot_id} → {point['name']}")
+                        self._log(
+                            "ok", f"[SEQ] Robot {robot_id} → {point['name']}")
+                        timeout = 0
+                        while True:
+                            try:
+                                moving = mc.is_moving()
+                            except Exception:
+                                moving = 0
+                            if moving != 1 or not self.state.sequence_running or timeout > 300:
+                                break
+                            time.sleep(0.05)
+                            timeout += 1
+                        self.state.update_robot(
+                            robot_id, sequence_points=current_sequence)
+                    self._emit("sequence_progress", {
+                        "robot_id": robot_id, "step": len(points),
+                        "total": len(points), "status": "Done",
+                    })
+                except Exception as e:
+                    self._emit("sequence_progress", {
+                        "robot_id": robot_id, "step": 0,
+                        "total": len(points), "status": "Error",
+                    })
+                    self._log("err", f"[ERR] Robot {robot_id}: {e}")
+
+            # self.state.sequence_running = False
+            self._emit("sequence_done", {"recipe": recipe_name})
+            self._log("ok", f"[OK] Sequence '{recipe_name}' finished")
+
+        threading.Thread(target=_run, daemon=True).start()
+        return {"success": True}
+
+    def stop_sequence(self):
+
+        for robot in self.state.get_all_robots().values():
+            mc = robot.get("Connection")
+            robot_id = robot.get("ID")
+            points = robot.get("sequence_points")
+            if mc:
+                try:
+                    mc.stop()
+                    mc.clear_error_information()
+                    mc.focus_all_servos()
+                    points.reverse()
+                    for i, point in enumerate(points):
+                        if not self.state.sequence_running:
+                            break
+                        mc.send_angles(point["coords"], 50)
+                        self._emit("sequence_progress", {
+                            "robot_id": robot_id, "step": i + 1,
+                            "total": len(points), "status": "Moving",
+                        })
+                        self._log(
+                            "ok", f"[SEQ] Robot {robot_id} → {point['name']}")
                         timeout = 0
                         while True:
                             try:
@@ -373,22 +444,12 @@ class JogEngine:
                     self._log("err", f"[ERR] Robot {robot_id}: {e}")
 
             self.state.sequence_running = False
-            self._emit("sequence_done", {"recipe": recipe_name})
-            self._log("ok", f"[OK] Sequence '{recipe_name}' finished")
+            self.state.update_robot(robot_id, sequence_points=[])
+            self._emit("sequence_done")
+            self._log("ok", f"[OK] Stop sequence finished")
 
-        threading.Thread(target=_run, daemon=True).start()
-        return {"success": True}
-
-    def stop_sequence(self):
-        self.state.sequence_running = False
-        for robot in self.state.get_all_robots().values():
-            mc = robot.get("Connection")
-            if mc:
-                try:
-                    mc.stop()
-                except Exception:
-                    pass
         self._log("warn", "[WARN] Sequence stopped by user")
+        self.state.sequence_running = False
         return {"success": True}
 
     def get_status(self):
@@ -413,7 +474,8 @@ class JogEngine:
 
             status = SPStatus()
             try:
-                ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(status))
+                ctypes.windll.kernel32.GetSystemPowerStatus(
+                    ctypes.byref(status))
             except Exception:
                 return
             if status.BatteryFlag == 128:
@@ -422,13 +484,16 @@ class JogEngine:
             last = None
             while True:
                 try:
-                    ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(status))
+                    ctypes.windll.kernel32.GetSystemPowerStatus(
+                        ctypes.byref(status))
                     current = "battery" if status.ACLineStatus == 0 else "ac"
                     if current != last:
                         self.state.ups_status = current
                         if current == "battery":
-                            self._emit("ups_alert", {"type": "lost", "battery": status.BatteryLifePercent})
-                            self._log("err", f"[UPS] Power lost! Battery at {status.BatteryLifePercent}%")
+                            self._emit("ups_alert", {
+                                       "type": "lost", "battery": status.BatteryLifePercent})
+                            self._log(
+                                "err", f"[UPS] Power lost! Battery at {status.BatteryLifePercent}%")
                             if self.state.sequence_running:
                                 self.stop_sequence()
                         else:

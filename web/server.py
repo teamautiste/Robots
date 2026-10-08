@@ -1,11 +1,12 @@
 import os
+# pyrefly: ignore [missing-import]
 from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend-next", "dist")
 
-app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="/static")
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="/")
 app.config["SECRET_KEY"] = "robot-control-2024"
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
