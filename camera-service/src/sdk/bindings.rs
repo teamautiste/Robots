@@ -264,7 +264,7 @@ pub struct IMV_PixelConvertParam {
 
 pub type IMV_FrameCallBack = extern "C" fn(pFrame: *mut IMV_Frame, pUser: *mut c_void);
 
-fn read_cstr(arr: &[std::os::raw::c_char]) -> String {
+pub(crate) fn read_cstr(arr: &[std::os::raw::c_char]) -> String {
     let bytes: Vec<u8> = arr.iter()
         .take_while(|&&c| c != 0)
         .map(|&c| c as u8)
