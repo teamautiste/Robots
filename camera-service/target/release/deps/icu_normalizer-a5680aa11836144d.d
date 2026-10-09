@@ -1,0 +1,10 @@
+C:\Users\Lynx_ControlBox\Desktop\Robots\camera-service\target\release\deps\icu_normalizer-a5680aa11836144d.d: C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\lib.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\properties.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\provider.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\uts46.rs
+
+C:\Users\Lynx_ControlBox\Desktop\Robots\camera-service\target\release\deps\libicu_normalizer-a5680aa11836144d.rlib: C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\lib.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\properties.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\provider.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\uts46.rs
+
+C:\Users\Lynx_ControlBox\Desktop\Robots\camera-service\target\release\deps\libicu_normalizer-a5680aa11836144d.rmeta: C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\lib.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\properties.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\provider.rs C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\uts46.rs
+
+C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\lib.rs:
+C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\properties.rs:
+C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\provider.rs:
+C:\Users\Lynx_ControlBox\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer-2.3.0\src\uts46.rs:
