@@ -12,8 +12,10 @@ pub struct Device {
     pub name: String,
 }
 
+
 pub fn enumerate() -> Result<Vec<Device>> {
     let mut list = IMV_DeviceList::default();
+
     let code = unsafe {
         IMV_EnumDevices(
             &mut list,
@@ -24,7 +26,7 @@ pub fn enumerate() -> Result<Vec<Device>> {
     check(code, "enumerar dispositivos")?;
 
     println!(
-        "[camera] IMV_EnumDevices devolvió {} dispositivos USB3 Vision",
+        "[camera] Total reportado por SDK: {}",
         list.nDevNum
     );
 
@@ -34,7 +36,7 @@ pub fn enumerate() -> Result<Vec<Device>> {
 
     if list.pDevInfo.is_null() {
         return Err(anyhow!(
-            "SDK devolvió una lista nula con dispositivos registrados"
+            "El SDK reportó dispositivos, pero la lista es nula"
         ));
     }
 
@@ -54,12 +56,38 @@ pub fn enumerate() -> Result<Vec<Device>> {
         let key = item.camera_key();
 
         println!(
-            "[camera] index={index}, serial={serial:?}, model={model:?}, name={name:?}, key={key:?}"
+            "[camera] index={index}, type={:?}, interface={:?}",
+            item.nCameraType,
+            item.nInterfaceType
         );
+
+        println!(
+            "[camera] serial={serial:?}, model={model:?}, \
+             name={name:?}, key={key:?}"
+        );
+
+        // Solo inspeccionar esta variante cuando la entrada
+        // esté identificada como una cámara USB3 Vision.
+        if item.nCameraType
+            == IMV_ECameraType::typeU3vCamera
+        {
+            let usb = unsafe {
+                &*(&item.DeviceSpecificInfo.usbDeviceInfo
+                    as *const std::mem::ManuallyDrop<IMV_UsbDeviceInfo>
+                    as *const IMV_UsbDeviceInfo)
+            };
+
+            println!(
+                "[camera] USB serial={:?}, GUID={:?}",
+                read_cstr(&usb.u3vSerialNumber),
+                read_cstr(&usb.deviceGUID)
+            );
+        }
 
         if serial.is_empty() {
             println!(
-                "[camera] Se omite el índice {index}: el SDK devolvió un serial vacío"
+                "[camera] Entrada {index} sin serial superior; \
+                 no se agrega todavía"
             );
             continue;
         }
@@ -79,6 +107,7 @@ pub fn enumerate() -> Result<Vec<Device>> {
 
     Ok(result)
 }
+
 
 pub struct Camera {
     handle: IMV_HANDLE,
