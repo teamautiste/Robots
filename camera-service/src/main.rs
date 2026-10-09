@@ -81,4 +81,42 @@ async fn assign(Path(id): Path<String>, State(app): State<App>, Json(body): Json
 async fn remove(Path(id): Path<String>, State(app): State<App>) -> Result<StatusCode> { let robot = app.robots.refresh().await.map_err(|_|ApiError(StatusCode::SERVICE_UNAVAILABLE,"robot_config_unavailable","No se pudo validar la configuración".into()))?.into_iter().find(|robot|robot.id==id).ok_or_else(||ApiError(StatusCode::NOT_FOUND,"robot_not_configured","Robot no configurado".into()))?; app.db.remove(&robot.ip).map_err(|error|ApiError(StatusCode::INTERNAL_SERVER_ERROR,"database_error",error))?; Ok(StatusCode::NO_CONTENT) }
 async fn stream(Path(serial): Path<String>, State(app): State<App>) -> Result<Response> { let stream = BroadcastStream::new(app.cameras.receiver(&serial)?).filter_map(|item| item.ok().map(|jpeg| { let mut data = format!("--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {}\r\n\r\n", jpeg.len()).into_bytes(); data.extend_from_slice(&jpeg); data.extend_from_slice(b"\r\n"); Ok::<Bytes,std::io::Error>(Bytes::from(data)) })); Ok(([(header::CONTENT_TYPE,"multipart/x-mixed-replace; boundary=frame"),(header::CACHE_CONTROL,"no-store")],Body::from_stream(stream)).into_response()) }
 
-#[tokio::main] async fn main() -> anyhow::Result<()> { dotenvy::dotenv().ok(); let db = PathBuf::from(env::var("CAMERA_DATABASE_PATH").unwrap_or_else(|_|"data/cameras.sqlite3".into())); let app = App { cameras: Arc::new(Cameras::new()), db: Arc::new(Db::open(db).map_err(anyhow::Error::msg)?), robots: Arc::new(Robots::new()) }; let _ = app.cameras.scan(); let router = Router::new().route("/health",get(health)).route("/api/robots",get(robots)).route("/api/cameras",get(cameras).post(scan)).route("/api/cameras/start-all",post(start_all)).route("/api/cameras/stop-all",post(stop_all)).route("/api/cameras/{serial}",get(camera)).route("/api/cameras/{serial}/open",post(start)).route("/api/cameras/{serial}/start",post(start)).route("/api/cameras/{serial}/stop",post(stop)).route("/api/cameras/{serial}/close",post(stop)).route("/api/cameras/{serial}/stream",get(stream)).route("/api/assignments",get(assignments)).route("/api/robots/{id}/camera",get(assigned).put(assign).delete(remove)).with_state(app); let address: SocketAddr = env::var("CAMERA_BIND_ADDR").unwrap_or_else(|_|"127.0.0.1:5001".into()).parse()?; axum::serve(tokio::net::TcpListener::bind(address).await?,router).await?; Ok(()) }
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    dotenvy::dotenv().ok();
+    let db = PathBuf::from(env::var("CAMERA_DATABASE_PATH").unwrap_or_else(|_| "data/cameras.sqlite3".into()));
+    let app = App {
+        cameras: Arc::new(Cameras::new()),
+        db: Arc::new(Db::open(db).map_err(anyhow::Error::msg)?),
+        robots: Arc::new(Robots::new()),
+    };
+    let _ = app.cameras.scan();
+    let router = Router::new()
+        .route("/health", get(health))
+        .route("/api/robots", get(robots))
+        .route("/api/cameras", get(cameras).post(scan))
+        .route("/api/cameras/start-all", post(start_all))
+        .route("/api/cameras/stop-all", post(stop_all))
+        .route("/api/cameras/{serial}", get(camera))
+        .route("/api/cameras/{serial}/open", post(start))
+        .route("/api/cameras/{serial}/start", post(start))
+        .route("/api/cameras/{serial}/stop", post(stop))
+        .route("/api/cameras/{serial}/close", post(stop))
+        .route("/api/cameras/{serial}/stream", get(stream))
+        .route("/api/assignments", get(assignments))
+        .route("/api/robots/{id}/camera", get(assigned).put(assign).delete(remove))
+        .with_state(app);
+
+    let address: SocketAddr = env::var("CAMERA_BIND_ADDR")
+        .unwrap_or_else(|_| "127.0.0.1:5001".into())
+        .parse()?;
+
+    println!("  Servicio de Camaras Industriales iRAYPLE");
+    println!("  Escuchando en : http://{}", address);
+    println!("  Health check  : http://{}/health", address);
+    println!("  Listar camaras: http://{}/api/cameras", address);
+
+    axum::serve(tokio::net::TcpListener::bind(address).await?, router).await?;
+    Ok(())
+}
+
