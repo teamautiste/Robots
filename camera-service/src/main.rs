@@ -62,7 +62,7 @@ impl Db {
 }
 
 impl Robots {
-    fn new() -> Self { let base = env::var("ROBOT_BACKEND_URL").unwrap_or_else(|_| "http://127.0.0.1:5000".into()); let path = env::var("ROBOT_CONFIG_PATH").unwrap_or_else(|_| "/api/config".into()); Self { client: reqwest::Client::builder().timeout(Duration::from_secs(3)).build().unwrap(), url: format!("{}{}", base.trim_end_matches('/'), path), cached: Mutex::new(Vec::new()) } }
+    fn new() -> Self { let base = env::var("ROBOT_BACKEND_URL").unwrap_or_else(|_| "http://127.0.0.1:5000".into()); let path = env::var("ROBOT_CONFIG_ENDPOINT").unwrap_or_else(|_| "/api/config".into()); Self { client: reqwest::Client::builder().timeout(Duration::from_secs(3)).build().unwrap(), url: format!("{}{}", base.trim_end_matches('/'), path), cached: Mutex::new(Vec::new()) } }
     async fn refresh(&self) -> std::result::Result<Vec<Robot>, String> { let config: Config = self.client.get(&self.url).send().await.map_err(|_| "Configuración de robots no disponible".to_owned())?.error_for_status().map_err(|_| "Configuración de robots no disponible".to_owned())?.json().await.map_err(|_| "Configuración de robots inválida".to_owned())?; let mut robots = Vec::new(); for (id, ip) in config.ips { if !id.starts_with("Robot_") || ip.parse::<IpAddr>().is_err() { return Err("Configuración de robots inválida".into()); } robots.push(Robot { id, ip }); } if robots.is_empty() { return Err("Configuración de robots vacía".into()); } robots.sort_by(|a,b| a.id.cmp(&b.id)); *self.cached.lock() = robots.clone(); Ok(robots) }
 }
 
