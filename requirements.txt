@@ -1,3 +1,13 @@
+<<<<<<< HEAD
 Flask==3.1.2
 Flask-SocketIO==5.6.1
 pymycobot==4.0.4
+=======
+Flask>=3.0.0
+Flask-SocketIO>=5.3.0
+pymycobot>=4.0.0
+PyQt6>=6.6.0
+pyserial>=3.5
+simple-websocket>=1.0.0
+requests>=2.31.0
+>>>>>>> d7795e843d7cd1bfd524cdcb18ce966e78a7e393
