@@ -1,2 +1,0 @@
-cargo:rustc-link-search=native=C:\Program Files\HuarayTech\MV Viewer\Development\Lib\x64
-cargo:rerun-if-env-changed=IRAYPLE_SDK_DIR

@@ -105,6 +105,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/cameras/{serial}/stream", get(stream))
         .route("/api/assignments", get(assignments))
         .route("/api/robots/{id}/camera", get(assigned).put(assign).delete(remove))
+        .layer(tower_http::cors::CorsLayer::permissive())
         .with_state(app);
 
     let address: SocketAddr = env::var("CAMERA_BIND_ADDR")

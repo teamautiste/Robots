@@ -20,7 +20,9 @@ services:
       dockerfile: Dockerfile
       args:
         BACKEND_URL: http://backend:5000
-        CAMERA_SERVICE_URL: ${CAMERA_SERVICE_URL:-http://host.docker.internal:5001}
+    environment:
+      BACKEND_URL: http://backend:5000
+      CAMERA_SERVICE_URL: ${CAMERA_SERVICE_URL:-http://host.docker.internal:5001}
     ports:
       - "${FRONTEND_PORT:-4553}:4553"
     depends_on:

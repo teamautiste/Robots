@@ -27,7 +27,9 @@ FROM node:20-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=4553 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    BACKEND_URL=http://backend:5000 \
+    CAMERA_SERVICE_URL=http://host.docker.internal:5001
 
 WORKDIR /app
 
