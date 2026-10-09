@@ -20,7 +20,7 @@ ENV BACKEND_URL=$BACKEND_URL \
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . ./
 
-RUN npm run build
+RUN npm run serve
 
 FROM node:20-bookworm-slim AS runtime
 
