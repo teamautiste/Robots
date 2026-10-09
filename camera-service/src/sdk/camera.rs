@@ -17,10 +17,7 @@ pub fn enumerate() -> Result<Vec<Device>> {
     let mut list = IMV_DeviceList::default();
 
     let code = unsafe {
-        IMV_EnumDevices(
-            &mut list,
-            IMV_EInterfaceType::interfaceTypeUsb3 as u32,
-        )
+        IMV_EnumDevices(&mut list, IMV_EInterfaceType::interfaceTypeAll as u32)
     };
 
     check(code, "enumerar dispositivos")?;
