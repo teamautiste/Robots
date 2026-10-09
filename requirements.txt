@@ -1,0 +1,7 @@
+Flask>=3.0.0
+Flask-SocketIO>=5.3.0
+pymycobot>=4.0.0
+PyQt6>=6.6.0
+pyserial>=3.5
+simple-websocket>=1.0.0
+requests>=2.31.0
