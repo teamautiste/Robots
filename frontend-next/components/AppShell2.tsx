@@ -6,6 +6,7 @@ import MainTab from '@/components/tabs/MainTab';
 import JoggingTab from '@/components/tabs/JoggingTab';
 import ConfigTab from '@/components/tabs/ConfigTab';
 import RecipeTab from '@/components/tabs/RecipeTab';
+import CamerasTab from '@/components/tabs/CamerasTab';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useSocket } from '@/hooks/useSocket';
 import { useRobots } from '@/hooks/useRobots';
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'jogging', label: 'Jogging', icon: '🕹' },
   { id: 'config', label: 'Configuración', icon: '⚙' },
   { id: 'recipes', label: 'Recetas', icon: '📋' },
+  { id: 'cameras', label: 'Cámaras', icon: '📷' },
 ] as const;
 
 export default function AppShell() {
@@ -59,6 +61,7 @@ export default function AppShell() {
             {activeTab === 'jogging' && <JoggingTab />}
             {activeTab === 'config' && <ConfigTab />}
             {activeTab === 'recipes' && <RecipeTab />}
+            {activeTab === 'cameras' && <CamerasTab />}
           </div>
 
         </div>

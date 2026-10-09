@@ -1,0 +1,37 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5000
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    volumes:
+      - ${ROBOT_CONFIG_PATH:-./robots_IPS.json}:/app/robots_IPS.json
+      - ${RECIPES_PATH:-./recipes}:/app/recipes
+    networks:
+      - robot-network
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+      args:
+        BACKEND_URL: http://backend:5000
+        CAMERA_SERVICE_URL: ${CAMERA_SERVICE_URL:-http://host.docker.internal:5001}
+    ports:
+      - "${FRONTEND_PORT:-4553}:4553"
+    depends_on:
+      backend:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - robot-network
+    restart: unless-stopped
+
+networks:
+  robot-network:
+    name: robot-network

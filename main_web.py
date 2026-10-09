@@ -6,8 +6,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
-PORT = 5000
-HOST = "127.0.0.1"
+PORT = int(os.getenv("PORT", "5000"))
+HOST = os.getenv("HOST", "127.0.0.1")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,9 @@
+C:\Users\JOHERNANDEZ\Documents\codigos\Robots\camera-service\target\debug\deps\serde_path_to_error-7dc04406ab59d64c.d: C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\lib.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\de.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\path.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\ser.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\wrap.rs
+
+C:\Users\JOHERNANDEZ\Documents\codigos\Robots\camera-service\target\debug\deps\libserde_path_to_error-7dc04406ab59d64c.rmeta: C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\lib.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\de.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\path.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\ser.rs C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\wrap.rs
+
+C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\lib.rs:
+C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\de.rs:
+C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\path.rs:
+C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\ser.rs:
+C:\Users\JOHERNANDEZ\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_path_to_error-0.1.20\src\wrap.rs:

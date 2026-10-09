@@ -65,7 +65,27 @@ export interface UpsState {
 
 export type JogMode = 'joint' | 'cartesian';
 export type JogStep = 1 | 5 | 10 | 50;
-export type ActiveTab = 'main' | 'jogging' | 'config';
+export type ActiveTab = 'main' | 'jogging' | 'config' | 'recipes' | 'cameras';
+
+export interface Camera {
+  serial: string;
+  model: string;
+  name: string;
+  connected: boolean;
+  opened: boolean;
+  capturing: boolean;
+  width?: number;
+  height?: number;
+  fps?: number;
+  last_error?: string;
+}
+
+export interface CameraAssignment {
+  robot_ip: string;
+  camera_serial: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Feedback {
   message: string;
