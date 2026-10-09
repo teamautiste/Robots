@@ -14,14 +14,70 @@ pub struct Device {
 
 pub fn enumerate() -> Result<Vec<Device>> {
     let mut list = IMV_DeviceList::default();
-    let code = unsafe { IMV_EnumDevices(&mut list, 0x00000002) };
+    let code = unsafe {
+        IMV_EnumDevices(
+            &mut list,
+            IMV_EInterfaceType::interfaceTypeUsb3 as u32,
+        )
+    };
+
     check(code, "enumerar dispositivos")?;
-    if list.pDevInfo.is_null() && list.nDevNum > 0 { return Err(anyhow!("SDK devolvió una lista de dispositivos inválida")); }
-    let devices = unsafe { std::slice::from_raw_parts(list.pDevInfo, list.nDevNum as usize) };
-    Ok(devices.iter().enumerate().filter_map(|(index, item)| {
+
+    println!(
+        "[camera] IMV_EnumDevices devolvió {} dispositivos USB3 Vision",
+        list.nDevNum
+    );
+
+    if list.nDevNum == 0 {
+        return Ok(Vec::new());
+    }
+
+    if list.pDevInfo.is_null() {
+        return Err(anyhow!(
+            "SDK devolvió una lista nula con dispositivos registrados"
+        ));
+    }
+
+    let devices = unsafe {
+        std::slice::from_raw_parts(
+            list.pDevInfo,
+            list.nDevNum as usize,
+        )
+    };
+
+    let mut result = Vec::new();
+
+    for (index, item) in devices.iter().enumerate() {
         let serial = item.serial_number();
-        if serial.is_empty() { None } else { Some(Device { index: index as u32, serial, model: item.model_name(), name: item.camera_name() }) }
-    }).collect())
+        let model = item.model_name();
+        let name = item.camera_name();
+        let key = item.camera_key();
+
+        println!(
+            "[camera] index={index}, serial={serial:?}, model={model:?}, name={name:?}, key={key:?}"
+        );
+
+        if serial.is_empty() {
+            println!(
+                "[camera] Se omite el índice {index}: el SDK devolvió un serial vacío"
+            );
+            continue;
+        }
+
+        result.push(Device {
+            index: index as u32,
+            serial,
+            model,
+            name,
+        });
+    }
+
+    println!(
+        "[camera] Total de dispositivos utilizables: {}",
+        result.len()
+    );
+
+    Ok(result)
 }
 
 pub struct Camera {
