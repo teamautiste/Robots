@@ -1,0 +1,9 @@
+# Despliegue sin internet: usa la imagen robots-frontend ya existente pero
+# reemplaza la app compilada por frontend-next/offline-build (generada con
+# "npm run build:offline" en otra máquina).
+#
+#   docker compose -f compose.yaml -f compose.offline.yaml up -d --no-build
+services:
+  frontend:
+    volumes:
+      - ./frontend-next/offline-build:/app

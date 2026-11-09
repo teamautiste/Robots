@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import JogButton from '@/components/ui/JogButton';
 import LogBox from '@/components/ui/LogBox';
 import StatusDot from '@/components/ui/StatusDot';
@@ -73,16 +73,22 @@ export default function JoggingTab() {
     await apiFocusServos(currentRobotId);
   }
 
-  async function handleTeachRecipeChange(name: string) {
-    setTeachRecipe(name);
+  useEffect(() => {
     setSelectedTeachPoint('__new__');
     setTeachPoints([]);
-    if (!name || !currentRobotId) return;
-    try {
-      const recipe = await apiGetRecipe(name);
-      const pts = (recipe[`Robot ${currentRobotId}`] ?? []).map((p) => p.name);
-      setTeachPoints(pts);
-    } catch { /* ignore */ }
+    if (!teachRecipe || !currentRobotId) return;
+    let cancelled = false; 
+    apiGetRecipe(teachRecipe)
+      .then((recipe) => {
+        if (cancelled) return;
+        setTeachPoints((recipe[`Robot ${currentRobotId}`] ?? []).map((p) => p.name));
+      })
+      .catch(() => { /* ignore */ });
+    return () => { cancelled = true; };
+  }, [teachRecipe, currentRobotId]);
+
+  function handleTeachRecipeChange(name: string) {
+    setTeachRecipe(name);
   }
 
   async function handleTeach() {

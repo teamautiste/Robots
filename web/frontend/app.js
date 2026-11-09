@@ -1,4 +1,3 @@
-/* ── STATE ──────────────────────────────────────────────────────────────── */
 const state = {
   currentRobot: null,
   jogMode: 'joint',
@@ -21,7 +20,6 @@ const CART_AXES  = ['X','Y','Z','Rx','Ry','Rz'];
 const JOINT_UNITS = ['°','°','°','°','°','°'];
 const CART_UNITS  = ['mm','mm','mm','°','°','°'];
 
-/* ── SOCKET.IO ──────────────────────────────────────────────────────────── */
 const socket = io();
 
 socket.on('connect', () => console.log('[WS] Connected'));
@@ -80,7 +78,6 @@ socket.on('ups_alert', (data) => {
   }
 });
 
-/* ── API HELPER ─────────────────────────────────────────────────────────── */
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body !== undefined) opts.body = JSON.stringify(body);
@@ -93,7 +90,6 @@ async function api(method, path, body) {
   }
 }
 
-/* ── TAB SWITCHING ──────────────────────────────────────────────────────── */
 function showTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -103,7 +99,6 @@ function showTab(name) {
   if (name === 'config') { loadConfig(); loadRecipesForConfig(); }
 }
 
-/* ── ROBOT LIST POLLING ─────────────────────────────────────────────────── */
 async function pollRobots() {
   const data = await api('GET', '/api/robots');
   if (!Array.isArray(data)) return;
@@ -164,7 +159,6 @@ function updateHeaderStatus() {
   }
 }
 
-/* ── JOG MODE & CONTROLS ────────────────────────────────────────────────── */
 function setJogMode(mode, btn) {
   state.jogMode = mode;
   document.querySelectorAll('#jog-mode-pills .pill').forEach(p => p.classList.remove('active'));
@@ -208,6 +202,7 @@ function onJogRobotChange() {
   state.currentRobot = sel ? parseInt(sel) : null;
   updateHeaderStatus();
   renderJogButtons();
+  onTeachRecipeChange(); 
 
   const dot  = document.getElementById('jog-dot');
   const text = document.getElementById('jog-status-text');
@@ -236,7 +231,6 @@ function refreshJogRobotSelect() {
   if (cur) sel.value = cur;
 }
 
-/* ── POSITION POLLING ───────────────────────────────────────────────────── */
 function startPositionPolling() {
   stopPositionPolling();
   state.positionInterval = setInterval(updatePosition, 250);
@@ -269,7 +263,6 @@ function clearPosTable() {
   document.getElementById('pos-tbody').innerHTML = '';
 }
 
-/* ── SERVO CONTROL ──────────────────────────────────────────────────────── */
 async function releaseServos() {
   if (!state.currentRobot) return alert('Selecciona un robot primero');
   await api('POST', `/api/robots/${state.currentRobot}/release`);
@@ -280,7 +273,6 @@ async function focusServos() {
   await api('POST', `/api/robots/${state.currentRobot}/focus`);
 }
 
-/* ── TEACH & GOTO ───────────────────────────────────────────────────────── */
 async function onTeachRecipeChange() {
   state.teachRecipe = document.getElementById('teach-recipe-select').value;
   const sel = document.getElementById('teach-point-select');
@@ -476,7 +468,6 @@ function updateTeachRecipeSelect() {
   if (cur) sel.value = cur;
 }
 
-/* ── POINTS TABLE (CONFIG) ──────────────────────────────────────────────── */
 let selectedRobotTabForPoints = 1;
 
 function renderRobotTabs() {
@@ -574,7 +565,6 @@ async function savePoints() {
   }
 }
 
-/* ── LOG ────────────────────────────────────────────────────────────────── */
 function addLog(level, msg) {
   const log = document.getElementById('jog-log');
   if (!log) return;
@@ -586,12 +576,10 @@ function addLog(level, msg) {
   if (log.children.length > 100) log.removeChild(log.firstChild);
 }
 
-/* ── UPS BANNER ─────────────────────────────────────────────────────────── */
 function dismissUPS() {
   document.getElementById('ups-banner').classList.remove('show');
 }
 
-/* ── INIT ───────────────────────────────────────────────────────────────── */
 async function init() {
   await pollRobots();
   renderJogButtons();

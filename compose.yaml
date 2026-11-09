@@ -11,6 +11,8 @@ services:
     volumes:
       - ${ROBOT_CONFIG_PATH:-./robots_IPS.json}:/app/robots_IPS.json
       - ${RECIPES_PATH:-./recipes}:/app/recipes
+      - ./main_web.py:/app/main_web.py:ro
+      - ./web:/app/web:ro
     networks:
       - robot-network
     restart: unless-stopped
