@@ -12,9 +12,11 @@ WORKDIR /app
 
 ARG BACKEND_URL=http://backend:5000
 ARG CAMERA_SERVICE_URL=http://host.docker.internal:5001
+ARG CAMERA_SUPERVISOR_URL=http://host.docker.internal:5002
 
 ENV BACKEND_URL=$BACKEND_URL \
     CAMERA_SERVICE_URL=$CAMERA_SERVICE_URL \
+    CAMERA_SUPERVISOR_URL=$CAMERA_SUPERVISOR_URL \
     NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=dependencies /app/node_modules ./node_modules

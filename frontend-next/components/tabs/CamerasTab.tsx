@@ -15,6 +15,8 @@ import {
   cameraStream,
 } from '@/lib/cameras';
 import { useAppStore } from '@/hooks/useAppStore';
+import { useCameraService } from '@/hooks/useCameraService';
+import CameraServiceControl from '@/components/cameras/CameraServiceControl';
 
 export default function CamerasTab() {
   const [cameras, setCameras] = useState<Camera[]>([]);
@@ -23,6 +25,7 @@ export default function CamerasTab() {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
   const robots = useAppStore((state) => state.robots);
+  const { running: serviceRunning } = useCameraService();
 
   const load = useCallback(async () => {
     try {
@@ -39,25 +42,36 @@ export default function CamerasTab() {
   }, []);
 
   useEffect(() => {
+    if (!serviceRunning) {
+      setCameras([]);
+      setAssignments([]);
+      setError('');
+      return;
+    }
     (async () => {
-      setScanning(true);
-      try {
-        await apiScanCameras();
-      } catch { /* el servicio puede no tener cámaras aún */ }
-      setScanning(false);
+      // Escanear solo si el servicio aún no conoce cámaras: escanear con
+      // cámaras capturando es lento y antes se hacía en cada visita.
+      const known = await apiGetCameras().catch(() => []);
+      if (known.length === 0) {
+        setScanning(true);
+        try {
+          await apiScanCameras();
+        } catch { /* el servicio puede no tener cámaras aún */ }
+        setScanning(false);
+      }
       await load();
     })();
     const timer = window.setInterval(load, 3000);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [load, serviceRunning]);
 
   const run = async (key: string, action: () => Promise<void>) => {
     setBusy(key);
     try {
       await action();
       await load();
-    } catch {
-      setError('No se pudo completar la operación');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo completar la operación');
     } finally {
       setBusy('');
     }
@@ -69,13 +83,14 @@ export default function CamerasTab() {
     try {
       await apiScanCameras();
       await load();
-    } catch {
-      setError('No se pudo escanear las cámaras');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo escanear las cámaras');
     } finally {
       setScanning(false);
     }
   };
 
+  const cameraBusy = (serial: string) => busy.startsWith('all') || busy.endsWith(`-${serial}`);
   const robotFor = (serial: string) => assignments.find((a) => a.camera_serial === serial)?.robot_ip;
   const robotIdFor = (ip: string) => robots.find((r) => r.ip === ip)?.id;
 
@@ -84,6 +99,9 @@ export default function CamerasTab() {
 
   return (
     <div className="h-full overflow-y-auto p-5">
+      <div className="mb-4">
+        <CameraServiceControl />
+      </div>
 
       <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
         <div>
@@ -96,7 +114,7 @@ export default function CamerasTab() {
           <button
             id="btn-scan-cameras"
             onClick={scan}
-            disabled={scanning || !!busy}
+            disabled={!serviceRunning || scanning || !!busy}
             className="px-3 py-2 text-xs border rounded-md disabled:opacity-50 flex items-center gap-1"
           >
             {scanning ? (
@@ -111,7 +129,7 @@ export default function CamerasTab() {
           <button
             id="btn-start-all-cameras"
             onClick={() => run('all-start', apiStartAllCameras)}
-            disabled={!!busy || scanning}
+            disabled={!serviceRunning || !!busy || scanning}
             className="px-3 py-2 text-xs rounded-md bg-accent text-white disabled:opacity-50"
           >
             ▶ Iniciar todas
@@ -119,7 +137,7 @@ export default function CamerasTab() {
           <button
             id="btn-stop-all-cameras"
             onClick={() => run('all-stop', apiStopAllCameras)}
-            disabled={!!busy || scanning}
+            disabled={!serviceRunning || !!busy || scanning}
             className="px-3 py-2 text-xs border rounded-md disabled:opacity-50"
           >
             ■ Detener todas
@@ -141,7 +159,7 @@ export default function CamerasTab() {
                 key={index}
                 className="min-h-52 rounded-lg border border-dashed border-border-secondary p-4 flex items-center justify-center text-xs text-text-secondary"
               >
-                {scanning ? 'Buscando cámara…' : 'Espacio de cámara disponible'}
+                {!serviceRunning ? 'Servicio de cámaras detenido' : scanning ? 'Buscando cámara…' : 'Espacio de cámara disponible'}
               </div>
             );
           }
@@ -188,7 +206,7 @@ export default function CamerasTab() {
                 <div className="flex gap-2">
                   <button
                     id={`btn-start-camera-${camera.serial}`}
-                    disabled={!!busy || !camera.connected || camera.capturing}
+                    disabled={cameraBusy(camera.serial) || !camera.connected || camera.capturing}
                     onClick={() => run(`start-${camera.serial}`, () => apiStartCamera(camera.serial))}
                     className="border rounded px-2 py-1 disabled:opacity-50"
                   >
@@ -196,7 +214,7 @@ export default function CamerasTab() {
                   </button>
                   <button
                     id={`btn-stop-camera-${camera.serial}`}
-                    disabled={!!busy || !camera.capturing}
+                    disabled={cameraBusy(camera.serial) || !camera.capturing}
                     onClick={() => run(`stop-${camera.serial}`, () => apiStopCamera(camera.serial))}
                     className="border rounded px-2 py-1 disabled:opacity-50"
                   >
@@ -208,7 +226,7 @@ export default function CamerasTab() {
                 {robotId ? (
                   <button
                     id={`btn-remove-assign-${camera.serial}`}
-                    disabled={!!busy}
+                    disabled={cameraBusy(camera.serial)}
                     onClick={() => run(`remove-${camera.serial}`, () => apiRemoveCamera(`Robot_${robotId}`))}
                     className="text-danger-text disabled:opacity-50"
                   >

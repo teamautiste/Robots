@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import JogButton from '@/components/ui/JogButton';
 import LogBox from '@/components/ui/LogBox';
 import StatusDot from '@/components/ui/StatusDot';
+import RobotCameraView from '@/components/cameras/RobotCameraView';
 import { useAppStore } from '@/hooks/useAppStore';
 import { useRobotPosition } from '@/hooks/useRobotPosition';
 import {
@@ -246,6 +247,10 @@ export default function JoggingTab() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="mb-[20px]">
+        <RobotCameraView robotId={currentRobotId} />
       </div>
 
       <div className="border border-border-secondary rounded-lg p-[14px_20px]">

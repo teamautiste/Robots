@@ -25,6 +25,7 @@ services:
     environment:
       BACKEND_URL: http://backend:5000
       CAMERA_SERVICE_URL: ${CAMERA_SERVICE_URL:-http://host.docker.internal:5001}
+      CAMERA_SUPERVISOR_URL: ${CAMERA_SUPERVISOR_URL:-http://host.docker.internal:5002}
     ports:
       - "${FRONTEND_PORT:-4553}:4553"
     depends_on:

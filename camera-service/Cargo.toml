@@ -2,10 +2,16 @@
 name = "camera-service"
 version = "0.1.0"
 edition = "2021"
+# "cargo run --release" sigue arrancando el servicio de camaras.
+default-run = "camera-service"
 
 [[bin]]
 name = "camera-service"
 path = "src/main.rs"
+
+[[bin]]
+name = "camera-supervisor"
+path = "src/supervisor.rs"
 
 [dependencies]
 axum = "0.7"

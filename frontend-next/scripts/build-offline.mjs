@@ -21,6 +21,7 @@ const env = {
   ...process.env,
   BACKEND_URL: process.env.BACKEND_URL ?? 'http://backend:5000',
   CAMERA_SERVICE_URL: process.env.CAMERA_SERVICE_URL ?? 'http://host.docker.internal:5001',
+  CAMERA_SUPERVISOR_URL: process.env.CAMERA_SUPERVISOR_URL ?? 'http://host.docker.internal:5002',
   NEXT_TELEMETRY_DISABLED: '1',
 };
 

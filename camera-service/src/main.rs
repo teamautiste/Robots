@@ -11,8 +11,9 @@ use tokio::sync::broadcast;
 use tokio_stream::{wrappers::BroadcastStream, StreamExt};
 
 #[derive(Clone)] struct App { cameras: Arc<Cameras>, db: Arc<Db>, robots: Arc<Robots> }
-struct Cameras { items: Mutex<HashMap<String, Entry>> }
-struct Entry { device: sdk::camera::Device, status: Camera, stop: Arc<AtomicBool>, frames: broadcast::Sender<Bytes> }
+struct Cameras { items: Mutex<HashMap<String, Entry>>, scan_lock: Mutex<()> }
+// generation: identifica la captura vigente; un hilo viejo que termina no pisa el estado de una nueva.
+struct Entry { device: sdk::camera::Device, status: Camera, stop: Arc<AtomicBool>, frames: broadcast::Sender<Bytes>, generation: u64, worker: Option<std::thread::JoinHandle<()>> }
 #[derive(Clone, Serialize)] struct Camera { serial: String, model: String, name: String, connected: bool, opened: bool, capturing: bool, width: Option<u32>, height: Option<u32>, fps: Option<f64>, last_error: Option<String> }
 #[derive(Clone, Serialize)] struct Assignment { robot_ip: String, camera_serial: String, created_at: String, updated_at: String }
 struct Db { connection: Mutex<Connection> }
@@ -25,25 +26,46 @@ type Result<T> = std::result::Result<T, ApiError>;
 impl IntoResponse for ApiError { fn into_response(self) -> Response { (self.0, Json(serde_json::json!({"code": self.1, "error": self.2}))).into_response() } }
 
 impl Cameras {
-    fn new() -> Self { Self { items: Mutex::new(HashMap::new()) } }
+    fn new() -> Self { Self { items: Mutex::new(HashMap::new()), scan_lock: Mutex::new(()) } }
+    
     fn scan(&self) -> std::result::Result<(), String> {
+        let _scanning = self.scan_lock.lock();
         let found = sdk::camera::enumerate().map_err(|error| error.to_string())?;
         let mut items = self.items.lock();
         for entry in items.values_mut() { entry.status.connected = false; }
-        for device in found { let serial = device.serial.clone(); items.entry(serial.clone()).and_modify(|entry| { entry.device = device.clone(); entry.status.connected = true; }).or_insert_with(|| { let (frames, _) = broadcast::channel(2); Entry { status: Camera { serial: serial.clone(), model: device.model.clone(), name: device.name.clone(), connected: true, opened: false, capturing: false, width: None, height: None, fps: None, last_error: None }, device, stop: Arc::new(AtomicBool::new(false)), frames } }); }
+        for device in found { let serial = device.serial.clone(); items.entry(serial.clone()).and_modify(|entry| { entry.device = device.clone(); entry.status.connected = true; }).or_insert_with(|| { let (frames, _) = broadcast::channel(2); Entry { status: Camera { serial: serial.clone(), model: device.model.clone(), name: device.name.clone(), connected: true, opened: false, capturing: false, width: None, height: None, fps: None, last_error: None }, device, stop: Arc::new(AtomicBool::new(false)), frames, generation: 0, worker: None } }); }
         Ok(())
     }
     fn list(&self) -> Vec<Camera> { self.items.lock().values().map(|entry| entry.status.clone()).collect() }
     fn get(&self, serial: &str) -> Option<Camera> { self.items.lock().get(serial).map(|entry| entry.status.clone()) }
     fn start(self: &Arc<Self>, serial: &str) -> Result<()> {
-        let (device, stop, tx) = { let mut items = self.items.lock(); let entry = items.get_mut(serial).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "camera_not_found", "Cámara no encontrada".into()))?; if !entry.status.connected { return Err(ApiError(StatusCode::CONFLICT, "camera_disconnected", "La cámara está desconectada".into())); } if entry.status.capturing { return Ok(()); } entry.stop.store(false, Ordering::Release); entry.status.opened = true; entry.status.capturing = true; entry.status.last_error = None; (entry.device.clone(), entry.stop.clone(), entry.frames.clone()) };
+        let mut items = self.items.lock();
+        let entry = items.get_mut(serial).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "camera_not_found", "Cámara no encontrada".into()))?;
+        if !entry.status.connected { return Err(ApiError(StatusCode::CONFLICT, "camera_disconnected", "La cámara está desconectada".into())); }
+        if entry.status.capturing && !entry.stop.load(Ordering::Acquire) { return Ok(()); }
+        // Si la captura anterior aún se está cerrando, el nuevo hilo espera a que termine
+        // antes de abrir la cámara (antes este caso se ignoraba y la cámara no arrancaba).
+        let previous = entry.worker.take();
+        entry.generation += 1;
+        let generation = entry.generation;
+        let stop = Arc::new(AtomicBool::new(false));
+        entry.stop = stop.clone();
+        entry.status.opened = true; entry.status.capturing = true; entry.status.last_error = None; entry.status.fps = None;
+        let (device, tx) = (entry.device.clone(), entry.frames.clone());
         let manager = self.clone(); let serial = serial.to_owned();
-        std::thread::spawn(move || { let result = capture(device, stop, tx, |width, height, fps, error| manager.update(&serial, width, height, fps, error)); if let Err(error) = result { manager.update(&serial, None, None, None, Some(error)); } if let Some(entry) = manager.items.lock().get_mut(&serial) { entry.status.capturing = false; entry.status.opened = false; } });
+        entry.worker = Some(std::thread::spawn(move || {
+            if let Some(previous) = previous { let _ = previous.join(); }
+            let result = capture(device, stop, tx, |width, height, fps, error| manager.update(&serial, generation, width, height, fps, error));
+            if let Err(error) = result { manager.update(&serial, generation, None, None, None, Some(error)); }
+            if let Some(entry) = manager.items.lock().get_mut(&serial) { if entry.generation == generation { entry.status.capturing = false; entry.status.opened = false; } }
+        }));
         Ok(())
     }
-    fn update(&self, serial: &str, width: Option<u32>, height: Option<u32>, fps: Option<f64>, error: Option<String>) { if let Some(entry) = self.items.lock().get_mut(serial) { if width.is_some() { entry.status.width = width; entry.status.height = height; entry.status.fps = fps; } if error.is_some() { entry.status.last_error = error; } } }
-    fn stop(&self, serial: &str) -> Result<()> { let items = self.items.lock(); let entry = items.get(serial).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "camera_not_found", "Cámara no encontrada".into()))?; entry.stop.store(true, Ordering::Release); Ok(()) }
-    fn stop_all(&self) { for entry in self.items.lock().values() { entry.stop.store(true, Ordering::Release); } }
+    fn update(&self, serial: &str, generation: u64, width: Option<u32>, height: Option<u32>, fps: Option<f64>, error: Option<String>) { if let Some(entry) = self.items.lock().get_mut(serial) { if entry.generation != generation { return; } if width.is_some() { entry.status.width = width; entry.status.height = height; entry.status.fps = fps; } if error.is_some() { entry.status.last_error = error; } } }
+    // Se marca como detenida de inmediato; el hilo cierra la cámara en segundo plano (<= 1 s).
+    fn request_stop(entry: &mut Entry) { entry.stop.store(true, Ordering::Release); entry.status.capturing = false; entry.status.fps = None; }
+    fn stop(&self, serial: &str) -> Result<()> { let mut items = self.items.lock(); let entry = items.get_mut(serial).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "camera_not_found", "Cámara no encontrada".into()))?; Self::request_stop(entry); Ok(()) }
+    fn stop_all(&self) { for entry in self.items.lock().values_mut() { Self::request_stop(entry); } }
     fn receiver(&self, serial: &str) -> Result<broadcast::Receiver<Bytes>> { self.items.lock().get(serial).map(|entry| entry.frames.subscribe()).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "camera_not_found", "Cámara no encontrada".into())) }
 }
 
@@ -66,10 +88,10 @@ impl Robots {
     async fn refresh(&self) -> std::result::Result<Vec<Robot>, String> { let config: Config = self.client.get(&self.url).send().await.map_err(|_| "Configuración de robots no disponible".to_owned())?.error_for_status().map_err(|_| "Configuración de robots no disponible".to_owned())?.json().await.map_err(|_| "Configuración de robots inválida".to_owned())?; let mut robots = Vec::new(); for (id, ip) in config.ips { if !id.starts_with("Robot_") || ip.parse::<IpAddr>().is_err() { return Err("Configuración de robots inválida".into()); } robots.push(Robot { id, ip }); } if robots.is_empty() { return Err("Configuración de robots vacía".into()); } robots.sort_by(|a,b| a.id.cmp(&b.id)); *self.cached.lock() = robots.clone(); Ok(robots) }
 }
 
-async fn health(State(app): State<App>) -> Json<serde_json::Value> { let cameras = app.cameras.list(); let robots = app.robots.refresh().await; Json(serde_json::json!({"status":"ok","robot_config_available":robots.is_ok(),"cameras_detected":cameras.iter().filter(|camera|camera.connected).count(),"cameras_capturing":cameras.iter().filter(|camera|camera.capturing).count()})) }
+async fn health(State(app): State<App>) -> Json<serde_json::Value> { let cameras = app.cameras.list(); let robots_cached = !app.robots.cached.lock().is_empty(); Json(serde_json::json!({"status":"ok","robot_config_available":robots_cached,"cameras_detected":cameras.iter().filter(|camera|camera.connected).count(),"cameras_capturing":cameras.iter().filter(|camera|camera.capturing).count()})) }
 async fn robots(State(app): State<App>) -> Json<serde_json::Value> { match app.robots.refresh().await { Ok(robots) => Json(serde_json::json!({"robots":robots,"fresh":true})), Err(error) => Json(serde_json::json!({"robots":app.robots.cached.lock().clone(),"fresh":false,"error":error})) } }
 async fn cameras(State(app): State<App>) -> Json<Vec<Camera>> { Json(app.cameras.list()) }
-async fn scan(State(app): State<App>) -> Result<Json<Vec<Camera>>> { app.cameras.scan().map_err(|error| ApiError(StatusCode::SERVICE_UNAVAILABLE,"sdk_error",error))?; Ok(Json(app.cameras.list())) }
+async fn scan(State(app): State<App>) -> Result<Json<Vec<Camera>>> { let cameras = app.cameras.clone(); tokio::task::spawn_blocking(move || cameras.scan()).await.map_err(|error| ApiError(StatusCode::INTERNAL_SERVER_ERROR,"scan_failed",error.to_string()))?.map_err(|error| ApiError(StatusCode::SERVICE_UNAVAILABLE,"sdk_error",error))?; Ok(Json(app.cameras.list())) }
 async fn camera(Path(serial): Path<String>, State(app): State<App>) -> Result<Json<Camera>> { app.cameras.get(&serial).map(Json).ok_or_else(|| ApiError(StatusCode::NOT_FOUND,"camera_not_found","Cámara no encontrada".into())) }
 async fn start(Path(serial): Path<String>, State(app): State<App>) -> Result<StatusCode> { app.cameras.start(&serial)?; Ok(StatusCode::NO_CONTENT) }
 async fn stop(Path(serial): Path<String>, State(app): State<App>) -> Result<StatusCode> { app.cameras.stop(&serial)?; Ok(StatusCode::NO_CONTENT) }
