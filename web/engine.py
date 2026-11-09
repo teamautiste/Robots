@@ -1,10 +1,11 @@
-from string import templatelib
 import json
 import os
 import threading
 import time
 import ctypes
 import datetime
+
+from web.recipe_store import RecipeStore
 
 try:
     from pymycobot import MyCobot320Socket
@@ -42,6 +43,12 @@ class JogEngine:
         self.state = AppState()
         self.socketio = None
         self.recipe_path = recipe_path
+        db_path = os.getenv("RECIPES_DB") or os.path.join(
+            recipe_path, "recipes.sqlite3")
+        self.recipes = RecipeStore(db_path)
+        # Migración única: los JSON existentes pasan a SQLite y se mueven a
+        # recipes/_json_backup/.
+        self.recipes.import_json_dir(recipe_path, log=self._log)
         self._load_ip_config()
         self._start_ups_monitor()
 
@@ -224,52 +231,34 @@ class JogEngine:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def _ensure_recipes_dir(self):
-        if not os.path.exists(self.recipe_path):
-            os.makedirs(self.recipe_path)
+    # ── RECIPES (SQLite) ────────────────────────────────────────────────────
 
     def list_recipes(self):
-        self._ensure_recipes_dir()
-        recipes = []
-        for item in os.listdir(self.recipe_path):
-            if item.endswith(".json"):
-                recipes.append(item.replace(".json", ""))
-        return sorted(recipes)
+        return self.recipes.list_names()
 
     def create_recipe(self, name):
-        self._ensure_recipes_dir()
-        filepath = os.path.join(self.recipe_path, f"{name}.json")
-        if os.path.exists(filepath):
+        name = (name or "").strip()
+        if not name:
+            return {"success": False, "error": "Recipe name is required"}
+        if not self.recipes.create(name):
             return {"success": False, "error": "Recipe already exists"}
-        default_points = {
-            f"Robot {i}": [{"name": "Home", "coords": [0.0] * 6}]
-            for i in range(1, 9)
-        }
-        with open(filepath, "w") as f:
-            json.dump(default_points, f, indent=4)
         self._log("ok", f"[OK] Recipe '{name}' created")
         return {"success": True}
 
     def delete_recipe(self, name):
-        filepath = os.path.join(self.recipe_path, f"{name}.json")
-        if not os.path.exists(filepath):
+        if not self.recipes.delete(name):
             return {"success": False, "error": "Recipe not found"}
-        os.remove(filepath)
         self._log("warn", f"[WARN] Recipe '{name}' deleted")
         return {"success": True}
 
     def get_recipe(self, name):
-        filepath = os.path.join(self.recipe_path, f"{name}.json")
-        if not os.path.exists(filepath):
-            return None
-        with open(filepath, "r") as f:
-            return json.load(f)
+        return self.recipes.get(name)
 
     def save_recipe(self, name, data):
-        self._ensure_recipes_dir()
-        filepath = os.path.join(self.recipe_path, f"{name}.json")
-        with open(filepath, "w") as f:
-            json.dump(data, f, indent=4)
+        try:
+            self.recipes.save(name, data)
+        except (ValueError, TypeError, AttributeError) as e:
+            return {"success": False, "error": f"Invalid recipe: {e}"}
         self._log("ok", f"[OK] Recipe '{name}' saved")
         return {"success": True}
 
@@ -285,23 +274,8 @@ class JogEngine:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-        recipe = self.get_recipe(recipe_name) or {
-            f"Robot {i}": [] for i in range(1, 9)
-        }
-        robot_key = f"Robot {robot_index}"
-        points = recipe.get(robot_key, [])
-
-        for p in points:
-            if p["name"] == point_name:
-                p["coords"] = angles
-                break
-        else:
-            points.append({"name": point_name, "coords": angles})
-
-        recipe[robot_key] = points
-        filepath = os.path.join(self.recipe_path, f"{recipe_name}.json")
-        with open(filepath, "w") as f:
-            json.dump(recipe, f, indent=4)
+        self.recipes.upsert_point(
+            recipe_name, f"Robot {robot_index}", point_name, angles)
         self._log(
             "ok", f"[TEACH] Robot {robot_index} '{point_name}' saved in '{recipe_name}'")
         return {"success": True, "angles": angles}
@@ -311,12 +285,10 @@ class JogEngine:
         mc = robot.get("Connection")
         if not mc:
             return {"success": False, "error": "Robot not connected"}
-        recipe = self.get_recipe(recipe_name)
-        if not recipe:
+        if not self.recipes.exists(recipe_name):
             return {"success": False, "error": "Recipe not found"}
-        robot_key = f"Robot {robot_index}"
-        points = recipe.get(robot_key, [])
-        target = next((p for p in points if p["name"] == point_name), None)
+        target = self.recipes.get_point(
+            recipe_name, f"Robot {robot_index}", point_name)
         if not target:
             return {"success": False, "error": f"Point '{point_name}' not found"}
         try:

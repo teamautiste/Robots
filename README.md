@@ -107,9 +107,9 @@ Robots/
 │   ├── tailwind.config.ts              # Configuración de Tailwind y tokens de diseño
 │   └── tsconfig.json                   # Configuración del compilador TypeScript
 │
-├── recipes/                            # Repositorio de trayectorias persistidas en formato JSON
-│   ├── Test Recipe.json                # Receta de prueba con puntos 'Home'
-│   └── Testing.json                    # Receta con secuencias de puntos por robot
+├── recipes/                            # Trayectorias persistidas
+│   ├── recipes.sqlite3                 # Base SQLite de recetas (tablas `recipes` y `points`)
+│   └── _json_backup/                   # JSON antiguos ya migrados a SQLite (respaldo)
 │
 ├── main_web.py                         # Punto de entrada principal para arrancar el backend
 ├── robots_IPS.json                     # Archivo de configuración de red y parámetros cinemáticos
@@ -165,7 +165,7 @@ flowchart TD
 ### Flujo de Datos y Eventos
 1. **Comandos (Unidireccional HTTP)**: Acciones intencionales del usuario (Jogging, Guardar Receta, Conectar Robot, Iniciar Secuencia) se transmiten como peticiones `POST`/`PUT`/`DELETE` vía REST API.
 2. **Telemetría y Estado (Bidireccional WebSocket)**: Los cambios de estado de robots, las alertas de energía eléctrica, los logs del sistema y el progreso paso a paso de cada secuencia se emiten desde `JogEngine` mediante eventos WebSocket hacia el cliente React.
-3. **Persistencia Local**: Tanto las recetas de puntos como los parámetros de conexión se almacenan en el sistema de archivos local (`recipes/*.json` y `robots_IPS.json`), garantizando independencia de gestores de bases de datos pesados.
+3. **Persistencia Local**: Tanto las recetas de puntos como los parámetros de conexión se almacenan localmente: las recetas en SQLite (`recipes/recipes.sqlite3`, ruta configurable con `RECIPES_DB`, gestionada por `web/recipe_store.py`) y la configuración en `robots_IPS.json`. Al arrancar, cualquier `recipes/*.json` se importa automáticamente a SQLite y el archivo se mueve a `recipes/_json_backup/`.
 
 ---
 
