@@ -97,19 +97,19 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/cameras", get(cameras).post(scan))
         .route("/api/cameras/start-all", post(start_all))
         .route("/api/cameras/stop-all", post(stop_all))
-        .route("/api/cameras/{serial}", get(camera))
-        .route("/api/cameras/{serial}/open", post(start))
-        .route("/api/cameras/{serial}/start", post(start))
-        .route("/api/cameras/{serial}/stop", post(stop))
-        .route("/api/cameras/{serial}/close", post(stop))
-        .route("/api/cameras/{serial}/stream", get(stream))
+        .route("/api/cameras/:serial", get(camera))
+        .route("/api/cameras/:serial/open", post(start))
+        .route("/api/cameras/:serial/start", post(start))
+        .route("/api/cameras/:serial/stop", post(stop))
+        .route("/api/cameras/:serial/close", post(stop))
+        .route("/api/cameras/:serial/stream", get(stream))
         .route("/api/assignments", get(assignments))
-        .route("/api/robots/{id}/camera", get(assigned).put(assign).delete(remove))
+        .route("/api/robots/:id/camera", get(assigned).put(assign).delete(remove))
         .layer(tower_http::cors::CorsLayer::permissive())
         .with_state(app);
 
     let address: SocketAddr = env::var("CAMERA_BIND_ADDR")
-        .unwrap_or_else(|_| "127.0.0.1:5001".into())
+        .unwrap_or_else(|_| "0.0.0.0:5001".into())
         .parse()?;
 
     println!("  Servicio de Camaras Industriales iRAYPLE");

@@ -120,15 +120,14 @@ pub union IMV_InterfaceSpecificInfo {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct IMV_GigEDeviceInfo {
+    pub nIpConfigOptions: u32,
+    pub nIpConfigCurrent: u32,
+    pub nReserved: [u32; 3],
     pub macAddress: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub ipAddress: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub subnetMask: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub defaultGateWay: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub protocolVersion: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
-    pub reserved1: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
-    pub reserved2: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
-    pub reserved3: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
-    pub reserved4: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub ipConfiguration: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub chReserved: [[std::os::raw::c_char; IMV_MAX_STRING_LENTH]; 6],
 }
@@ -136,6 +135,13 @@ pub struct IMV_GigEDeviceInfo {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct IMV_UsbDeviceInfo {
+    pub bLowSpeedSupported: bool,
+    pub bFullSpeedSupported: bool,
+    pub bHighSpeedSupported: bool,
+    pub bSuperSpeedSupported: bool,
+    pub bDriverInstalled: bool,
+    pub boolReserved: [bool; 3],
+    pub Reserved: [u32; 4],
     pub configurationValid: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub genCPVersion: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
     pub u3vVersion: [std::os::raw::c_char; IMV_MAX_STRING_LENTH],
@@ -172,6 +178,11 @@ pub struct IMV_DeviceInfo {
     pub interfaceReserved: [[std::os::raw::c_char; IMV_MAX_STRING_LENTH]; 5],
     pub InterfaceInfo: IMV_InterfaceSpecificInfo,
 }
+
+// Tamaños según IMVDefines.h; si no coinciden, pDevInfo[i] se lee desplazado.
+const _: () = assert!(std::mem::size_of::<IMV_GigEDeviceInfo>() == 3092);
+const _: () = assert!(std::mem::size_of::<IMV_UsbDeviceInfo>() == 3096);
+const _: () = assert!(std::mem::size_of::<IMV_DeviceInfo>() == 10312);
 
 impl IMV_DeviceInfo {
     pub fn serial_number(&self) -> String {
