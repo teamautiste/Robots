@@ -9,7 +9,7 @@
 // Resultado: frontend-next/offline-build/  -> copiarla al servidor.
 
 import { execSync } from 'node:child_process';
-import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,7 +26,10 @@ const env = {
 
 execSync('npm run build', { cwd: root, env, stdio: 'inherit' });
 
-rmSync(out, { recursive: true, force: true });
+// Se vacía en lugar de borrarla: en Windows la carpeta puede estar abierta
+// (Explorador, VS Code) y borrarla falla con EPERM.
+mkdirSync(out, { recursive: true });
+for (const entry of readdirSync(out)) rmSync(join(out, entry), { recursive: true, force: true });
 cpSync(join(root, '.next', 'standalone'), out, { recursive: true });
 cpSync(join(root, '.next', 'static'), join(out, '.next', 'static'), { recursive: true });
 if (existsSync(join(root, 'public'))) {
@@ -43,5 +46,19 @@ for (const file of ['server.js', join('.next', 'required-server-files.json')]) {
   writeFileSync(path, text);
 }
 
-console.log(`\nListo: ${out}\nCópiala al servidor en frontend-next/offline-build y ejecuta:\n` +
+// Un solo archivo para copiar al servidor: así no se pierden node_modules ni
+// la carpeta .next (que empieza con punto). tar.exe viene con Windows 10+.
+const zip = join(root, 'offline-build.zip');
+rmSync(zip, { force: true });
+// En Windows se usa el tar.exe del sistema (bsdtar, sabe crear .zip); el de
+// Git Bash es GNU tar y no entiende rutas "C:\...".
+const tar = process.platform === 'win32'
+  ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe')
+  : 'bsdtar';
+execSync(`"${tar}" -a -c -f "${zip}" -C "${out}" .`, { stdio: 'inherit' });
+
+console.log(`\nListo: ${zip}\nEn el servidor (carpeta Robots):\n` +
+  '  Remove-Item -Recurse -Force frontend-next\\offline-build -ErrorAction SilentlyContinue\n' +
+  '  mkdir frontend-next\\offline-build\n' +
+  '  tar -xf offline-build.zip -C frontend-next\\offline-build\n' +
   '  docker compose -f compose.yaml -f compose.offline.yaml up -d --no-build\n');
